@@ -1,0 +1,28 @@
+services:
+    _defaults:
+        autowire: true
+        autoconfigure: true
+
+    # Repository
+    Makraz\Bundle\VerifyEmailChange\Persistence\EmailChangeRequestRepositoryInterface:
+        class: Makraz\Bundle\VerifyEmailChange\Persistence\EmailChangeRequestRepository
+
+    # Token Generator
+    Makraz\Bundle\VerifyEmailChange\Generator\EmailChangeTokenGenerator: ~
+
+    # Main Helper Service
+    Makraz\Bundle\VerifyEmailChange\EmailChange\EmailChangeHelper:
+        arguments:
+            $requestLifetime: '%verify_email_change.lifetime%'
+
+    # Twig Extension
+    Makraz\Bundle\VerifyEmailChange\Twig\EmailChangeExtension:
+        tags:
+            - { name: 'twig.extension' }
+
+    # Make Command
+    Makraz\Bundle\VerifyEmailChange\Command\MakeChangeEmailFormCommand:
+        arguments:
+            $projectDir: '%kernel.project_dir%'
+        tags:
+            - { name: 'console.command' }

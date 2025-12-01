@@ -1,0 +1,41 @@
+{
+    "name": "makraz/verify-email-change-bundle",
+    "description": "Symfony bundle for secure email address changes with verification",
+    "type": "symfony-bundle",
+    "license": "MIT",
+    "keywords": ["symfony", "email", "verification", "security", "user", "email-change"],
+    "authors": [
+        {
+            "name": "Hamza Makraz",
+            "email": "hamza@makraz.com"
+        }
+    ],
+    "require": {
+        "php": ">=8.1",
+        "symfony/framework-bundle": "^6.4|^7.0",
+        "symfony/security-core": "^6.4|^7.0",
+        "symfony/http-foundation": "^6.4|^7.0",
+        "symfony/routing": "^6.4|^7.0",
+        "symfony/event-dispatcher": "^6.4|^7.0",
+        "twig/twig": "^3.0"
+    },
+    "require-dev": {
+        "doctrine/orm": "^2.14|^3.0",
+        "doctrine/doctrine-bundle": "^2.10",
+        "phpunit/phpunit": "^10.0",
+        "symfony/phpunit-bridge": "^6.4|^7.0",
+        "symfony/validator": "^6.4|^7.0"
+    },
+    "autoload": {
+        "psr-4": {
+            "Makraz\\Bundle\\VerifyEmailChange\\": "src/"
+        }
+    },
+    "autoload-dev": {
+        "psr-4": {
+            "Makraz\\Bundle\\VerifyEmailChange\\Tests\\": "tests/"
+        }
+    },
+    "minimum-stability": "dev",
+    "prefer-stable": true
+}
