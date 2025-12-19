@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace Makraz\Bundle\VerifyEmailChange\Persistence;
 
 use Makraz\Bundle\VerifyEmailChange\Entity\EmailChangeRequest;
-use Makraz\Bundle\VerifyEmailChange\Model\EmailChangeInterface;
+use Makraz\Bundle\VerifyEmailChange\Model\EmailChangeableInterface;
 
 interface EmailChangeRequestRepositoryInterface
 {
@@ -17,14 +17,14 @@ interface EmailChangeRequestRepositoryInterface
     /**
      * Find an email change request by selector or user.
      *
-     * @param EmailChangeInterface|string $userOrSelector User object or selector string
+     * @param EmailChangeableInterface|string $userOrSelector User object or selector string
      */
-    public function findEmailChangeRequest(EmailChangeInterface|string $userOrSelector): ?EmailChangeRequest;
+    public function findEmailChangeRequest(EmailChangeableInterface|string $userOrSelector): ?EmailChangeRequest;
 
     /**
      * Get the user entity from an email change request.
      */
-    public function getUserFromRequest(EmailChangeRequest $request): ?EmailChangeInterface;
+    public function getUserFromRequest(EmailChangeRequest $request): ?EmailChangeableInterface;
 
     /**
      * Remove an email change request.

@@ -6,7 +6,7 @@ namespace Makraz\Bundle\VerifyEmailChange\Persistence;
 
 use Doctrine\ORM\EntityManagerInterface;
 use Makraz\Bundle\VerifyEmailChange\Entity\EmailChangeRequest;
-use Makraz\Bundle\VerifyEmailChange\Model\EmailChangeInterface;
+use Makraz\Bundle\VerifyEmailChange\Model\EmailChangeableInterface;
 
 class EmailChangeRequestRepository implements EmailChangeRequestRepositoryInterface
 {
@@ -21,7 +21,7 @@ class EmailChangeRequestRepository implements EmailChangeRequestRepositoryInterf
         $this->entityManager->flush();
     }
 
-    public function findEmailChangeRequest(EmailChangeInterface|string $userOrSelector): ?EmailChangeRequest
+    public function findEmailChangeRequest(EmailChangeableInterface|string $userOrSelector): ?EmailChangeRequest
     {
         $repository = $this->entityManager->getRepository(EmailChangeRequest::class);
 
@@ -34,14 +34,14 @@ class EmailChangeRequestRepository implements EmailChangeRequestRepositoryInterf
         return $repository->findOneBy(['userIdentifier' => $userIdentifier]);
     }
 
-    public function getUserFromRequest(EmailChangeRequest $request): ?EmailChangeInterface
+    public function getUserFromRequest(EmailChangeRequest $request): ?EmailChangeableInterface
     {
         $userClass = $request->getUserClass();
         $userId = $request->getUserId();
 
         $user = $this->entityManager->getRepository($userClass)->find($userId);
 
-        if (!$user instanceof EmailChangeInterface) {
+        if (!$user instanceof EmailChangeableInterface) {
             return null;
         }
 

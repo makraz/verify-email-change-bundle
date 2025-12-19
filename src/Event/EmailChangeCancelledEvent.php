@@ -4,12 +4,12 @@ declare(strict_types=1);
 
 namespace Makraz\Bundle\VerifyEmailChange\Event;
 
-use Makraz\Bundle\VerifyEmailChange\Model\EmailChangeInterface;
+use Makraz\Bundle\VerifyEmailChange\Model\EmailChangeableInterface;
 
 class EmailChangeCancelledEvent extends EmailChangeEvent
 {
     public function __construct(
-        EmailChangeInterface $user,
+        EmailChangeableInterface $user,
         private readonly string $cancelledEmail,
     ) {
         parent::__construct($user);

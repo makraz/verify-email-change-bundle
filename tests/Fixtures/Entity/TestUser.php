@@ -8,6 +8,8 @@ use Makraz\Bundle\VerifyEmailChange\Model\EmailChangeInterface;
 
 /**
  * Test user entity for unit and integration tests.
+ *
+ * Implements the deprecated EmailChangeInterface to verify backward compatibility.
  */
 class TestUser implements EmailChangeInterface
 {
@@ -42,17 +44,5 @@ class TestUser implements EmailChangeInterface
         $this->email = $email;
 
         return $this;
-    }
-
-    public function hasPendingEmailChange(): bool
-    {
-        // For test fixtures, return false by default
-        return false;
-    }
-
-    public function getPendingEmail(): ?string
-    {
-        // For test fixtures, return null by default
-        return null;
     }
 }

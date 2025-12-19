@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace Makraz\Bundle\VerifyEmailChange\Twig;
 
 use Makraz\Bundle\VerifyEmailChange\EmailChange\EmailChangeHelper;
-use Makraz\Bundle\VerifyEmailChange\Model\EmailChangeInterface;
+use Makraz\Bundle\VerifyEmailChange\Model\EmailChangeableInterface;
 use Twig\Extension\AbstractExtension;
 use Twig\TwigFunction;
 
@@ -32,7 +32,7 @@ class EmailChangeExtension extends AbstractExtension
     /**
      * Check if a user has a pending email change request.
      */
-    public function hasPendingEmailChange(EmailChangeInterface $user): bool
+    public function hasPendingEmailChange(EmailChangeableInterface $user): bool
     {
         return $this->emailChangeHelper->hasPendingEmailChange($user);
     }
@@ -40,7 +40,7 @@ class EmailChangeExtension extends AbstractExtension
     /**
      * Get the pending email address for a user.
      */
-    public function getPendingEmail(EmailChangeInterface $user): ?string
+    public function getPendingEmail(EmailChangeableInterface $user): ?string
     {
         return $this->emailChangeHelper->getPendingEmail($user);
     }

@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace Makraz\Bundle\VerifyEmailChange\Tests\Fixtures;
 
 use Makraz\Bundle\VerifyEmailChange\Entity\EmailChangeRequest;
-use Makraz\Bundle\VerifyEmailChange\Model\EmailChangeInterface;
+use Makraz\Bundle\VerifyEmailChange\Model\EmailChangeableInterface;
 use Makraz\Bundle\VerifyEmailChange\Persistence\EmailChangeRequestRepositoryInterface;
 
 /**
@@ -24,7 +24,7 @@ class EmailChangeRequestTestRepository implements EmailChangeRequestRepositoryIn
     private array $requestsByUser = [];
 
     /**
-     * @var array<string, EmailChangeInterface>
+     * @var array<string, EmailChangeableInterface>
      */
     private array $users = [];
 
@@ -34,9 +34,9 @@ class EmailChangeRequestTestRepository implements EmailChangeRequestRepositoryIn
         $this->requestsByUser[$request->getUserIdentifier()] = $request;
     }
 
-    public function findEmailChangeRequest(EmailChangeInterface|string $selectorOrUser): ?EmailChangeRequest
+    public function findEmailChangeRequest(EmailChangeableInterface|string $selectorOrUser): ?EmailChangeRequest
     {
-        if ($selectorOrUser instanceof EmailChangeInterface) {
+        if ($selectorOrUser instanceof EmailChangeableInterface) {
             $identifier = $this->createUserIdentifier($selectorOrUser);
 
             return $this->requestsByUser[$identifier] ?? null;
@@ -45,7 +45,7 @@ class EmailChangeRequestTestRepository implements EmailChangeRequestRepositoryIn
         return $this->requestsBySelector[$selectorOrUser] ?? null;
     }
 
-    public function getUserFromRequest(EmailChangeRequest $request): ?EmailChangeInterface
+    public function getUserFromRequest(EmailChangeRequest $request): ?EmailChangeableInterface
     {
         return $this->users[$request->getUserIdentifier()] ?? null;
     }
@@ -53,7 +53,7 @@ class EmailChangeRequestTestRepository implements EmailChangeRequestRepositoryIn
     /**
      * Register a user for testing purposes.
      */
-    public function registerUser(EmailChangeInterface $user): void
+    public function registerUser(EmailChangeableInterface $user): void
     {
         $identifier = $this->createUserIdentifier($user);
         $this->users[$identifier] = $user;
@@ -100,7 +100,7 @@ class EmailChangeRequestTestRepository implements EmailChangeRequestRepositoryIn
         $this->users = [];
     }
 
-    private function createUserIdentifier(EmailChangeInterface $user): string
+    private function createUserIdentifier(EmailChangeableInterface $user): string
     {
         return get_class($user).'::'.$user->getId();
     }

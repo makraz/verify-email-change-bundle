@@ -11,7 +11,7 @@ use Makraz\Bundle\VerifyEmailChange\Exception\ExpiredEmailChangeRequestException
 use Makraz\Bundle\VerifyEmailChange\Exception\InvalidEmailChangeRequestException;
 use Makraz\Bundle\VerifyEmailChange\Exception\TooManyEmailChangeRequestsException;
 use Makraz\Bundle\VerifyEmailChange\Generator\EmailChangeTokenGenerator;
-use Makraz\Bundle\VerifyEmailChange\Model\EmailChangeInterface;
+use Makraz\Bundle\VerifyEmailChange\Model\EmailChangeableInterface;
 use Makraz\Bundle\VerifyEmailChange\Persistence\EmailChangeRequestRepositoryInterface;
 
 class EmailChangeHelper
@@ -30,7 +30,7 @@ class EmailChangeHelper
      * Generate a signed verification URL for an email change request.
      *
      * @param string $routeName     The route name for the verification endpoint
-     * @param EmailChangeInterface $user The user requesting the change
+     * @param EmailChangeableInterface $user The user requesting the change
      * @param string $newEmail      The new email address
      * @param array  $extraParams   Additional route parameters
      *
@@ -40,7 +40,7 @@ class EmailChangeHelper
      */
     public function generateSignature(
         string $routeName,
-        EmailChangeInterface $user,
+        EmailChangeableInterface $user,
         string $newEmail,
         array $extraParams = []
     ): EmailChangeSignature {
@@ -87,9 +87,9 @@ class EmailChangeHelper
      * @throws ExpiredEmailChangeRequestException  if the link has expired
      * @throws InvalidEmailChangeRequestException if the link is invalid
      *
-     * @return EmailChangeInterface The user who initiated the email change
+     * @return EmailChangeableInterface The user who initiated the email change
      */
-    public function validateTokenAndFetchUser(Request $request): EmailChangeInterface
+    public function validateTokenAndFetchUser(Request $request): EmailChangeableInterface
     {
         $selector = $request->query->get('selector');
         $token = $request->query->get('token');
@@ -128,7 +128,7 @@ class EmailChangeHelper
      *
      * @return string The user's old email address
      */
-    public function confirmEmailChange(EmailChangeInterface $user): string
+    public function confirmEmailChange(EmailChangeableInterface $user): string
     {
         $emailChangeRequest = $this->repository->findEmailChangeRequest($user);
 
@@ -153,7 +153,7 @@ class EmailChangeHelper
      *
      * Note: You must call flush() to persist the changes!
      */
-    public function cancelEmailChange(EmailChangeInterface $user): void
+    public function cancelEmailChange(EmailChangeableInterface $user): void
     {
         $emailChangeRequest = $this->repository->findEmailChangeRequest($user);
 
@@ -165,7 +165,7 @@ class EmailChangeHelper
     /**
      * Check if a user has a pending email change request.
      */
-    public function hasPendingEmailChange(EmailChangeInterface $user): bool
+    public function hasPendingEmailChange(EmailChangeableInterface $user): bool
     {
         $request = $this->repository->findEmailChangeRequest($user);
 
@@ -175,7 +175,7 @@ class EmailChangeHelper
     /**
      * Get the pending email change request for a user.
      */
-    public function getPendingEmail(EmailChangeInterface $user): ?string
+    public function getPendingEmail(EmailChangeableInterface $user): ?string
     {
         $request = $this->repository->findEmailChangeRequest($user);
 
@@ -185,7 +185,7 @@ class EmailChangeHelper
     /**
      * Check if a user has a pending email change request.
      */
-    public function hasPendingRequest(EmailChangeInterface $user): bool
+    public function hasPendingRequest(EmailChangeableInterface $user): bool
     {
         $request = $this->repository->findEmailChangeRequest($user);
 
@@ -195,7 +195,7 @@ class EmailChangeHelper
     /**
      * Get the pending email change request for a user.
      */
-    public function getPendingRequest(EmailChangeInterface $user): ?EmailChangeRequest
+    public function getPendingRequest(EmailChangeableInterface $user): ?EmailChangeRequest
     {
         $request = $this->repository->findEmailChangeRequest($user);
 

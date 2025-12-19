@@ -6,7 +6,7 @@ namespace Makraz\Bundle\VerifyEmailChange\Entity;
 
 use Doctrine\DBAL\Types\Types;
 use Doctrine\ORM\Mapping as ORM;
-use Makraz\Bundle\VerifyEmailChange\Model\EmailChangeInterface;
+use Makraz\Bundle\VerifyEmailChange\Model\EmailChangeableInterface;
 
 /**
  * Stores email change verification requests.
@@ -44,7 +44,7 @@ class EmailChangeRequest
     private string $userIdentifier;
 
     public function __construct(
-        EmailChangeInterface $user,
+        EmailChangeableInterface $user,
         \DateTimeImmutable $expiresAt,
         string $selector,
         string $hashedToken,
@@ -108,12 +108,12 @@ class EmailChangeRequest
         return (int) explode('::', $this->userIdentifier)[1];
     }
 
-    private function createUserIdentifier(EmailChangeInterface $user): string
+    private function createUserIdentifier(EmailChangeableInterface $user): string
     {
         return get_class($user).'::'.$user->getId();
     }
 
-    public function belongsTo(EmailChangeInterface $user): bool
+    public function belongsTo(EmailChangeableInterface $user): bool
     {
         return $this->userIdentifier === $this->createUserIdentifier($user);
     }
