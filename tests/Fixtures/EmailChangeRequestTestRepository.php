@@ -80,6 +80,47 @@ class EmailChangeRequestTestRepository implements EmailChangeRequestRepositoryIn
         return $removed;
     }
 
+    public function countExpiredEmailChangeRequests(): int
+    {
+        $count = 0;
+        $now = new \DateTimeImmutable();
+
+        foreach ($this->requestsBySelector as $request) {
+            if ($request->getExpiresAt() <= $now) {
+                ++$count;
+            }
+        }
+
+        return $count;
+    }
+
+    public function removeExpiredOlderThan(\DateTimeImmutable $cutoff): int
+    {
+        $removed = 0;
+
+        foreach ($this->requestsBySelector as $selector => $request) {
+            if ($request->getExpiresAt() < $cutoff) {
+                $this->removeEmailChangeRequest($request);
+                ++$removed;
+            }
+        }
+
+        return $removed;
+    }
+
+    public function countExpiredOlderThan(\DateTimeImmutable $cutoff): int
+    {
+        $count = 0;
+
+        foreach ($this->requestsBySelector as $request) {
+            if ($request->getExpiresAt() < $cutoff) {
+                ++$count;
+            }
+        }
+
+        return $count;
+    }
+
     /**
      * Get all requests (for testing purposes).
      *

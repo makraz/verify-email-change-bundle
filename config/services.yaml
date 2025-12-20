@@ -26,3 +26,8 @@ services:
             $projectDir: '%kernel.project_dir%'
         tags:
             - { name: 'console.command' }
+
+    # Purge Expired Command
+    Makraz\Bundle\VerifyEmailChange\Command\PurgeExpiredEmailChangeRequestsCommand:
+        tags:
+            - { name: 'console.command' }

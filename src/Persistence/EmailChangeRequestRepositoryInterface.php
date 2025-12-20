@@ -37,4 +37,25 @@ interface EmailChangeRequestRepositoryInterface
      * @return int Number of removed requests
      */
     public function removeExpiredEmailChangeRequests(): int;
+
+    /**
+     * Count all expired email change requests.
+     *
+     * @return int Number of expired requests
+     */
+    public function countExpiredEmailChangeRequests(): int;
+
+    /**
+     * Remove expired email change requests older than the given cutoff.
+     *
+     * @return int Number of removed requests
+     */
+    public function removeExpiredOlderThan(\DateTimeImmutable $cutoff): int;
+
+    /**
+     * Count expired email change requests older than the given cutoff.
+     *
+     * @return int Number of expired requests
+     */
+    public function countExpiredOlderThan(\DateTimeImmutable $cutoff): int;
 }

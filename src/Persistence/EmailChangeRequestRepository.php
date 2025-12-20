@@ -64,4 +64,39 @@ class EmailChangeRequestRepository implements EmailChangeRequestRepositoryInterf
             ->getQuery()
             ->execute();
     }
+
+    public function countExpiredEmailChangeRequests(): int
+    {
+        $qb = $this->entityManager->createQueryBuilder();
+
+        return (int) $qb->select('COUNT(ecr.id)')
+            ->from(EmailChangeRequest::class, 'ecr')
+            ->where('ecr.expiresAt < :now')
+            ->setParameter('now', new \DateTimeImmutable())
+            ->getQuery()
+            ->getSingleScalarResult();
+    }
+
+    public function removeExpiredOlderThan(\DateTimeImmutable $cutoff): int
+    {
+        $qb = $this->entityManager->createQueryBuilder();
+
+        return $qb->delete(EmailChangeRequest::class, 'ecr')
+            ->where('ecr.expiresAt < :cutoff')
+            ->setParameter('cutoff', $cutoff)
+            ->getQuery()
+            ->execute();
+    }
+
+    public function countExpiredOlderThan(\DateTimeImmutable $cutoff): int
+    {
+        $qb = $this->entityManager->createQueryBuilder();
+
+        return (int) $qb->select('COUNT(ecr.id)')
+            ->from(EmailChangeRequest::class, 'ecr')
+            ->where('ecr.expiresAt < :cutoff')
+            ->setParameter('cutoff', $cutoff)
+            ->getQuery()
+            ->getSingleScalarResult();
+    }
 }
