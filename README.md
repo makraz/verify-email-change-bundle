@@ -6,13 +6,14 @@ A Symfony bundle that provides secure email address change functionality with ve
 
 ## Features
 
-- 🔐 **Cryptographically Secure**: Uses selector + hashed token pattern to prevent timing attacks
-- ⏱️ **Configurable Expiration**: Set custom lifetimes for verification links
-- 🚫 **Built-in Throttling**: Prevents abuse with configurable rate limiting
-- 📧 **Flexible**: You control email sending, UI, and password verification
-- 🎨 **Twig Integration**: Built-in Twig functions for checking pending email changes
-- 🧪 **Well Tested**: Comprehensive test suite with 203 tests
-- 📝 **Event-Driven**: Dispatches events for extensibility
+- **Cryptographically Secure**: Uses selector + hashed token pattern to prevent timing attacks
+- **Configurable Expiration**: Set custom lifetimes for verification links
+- **Built-in Throttling**: Prevents abuse with configurable rate limiting
+- **Flexible**: You control email sending, UI, and password verification
+- **Twig Integration**: Built-in Twig functions for checking pending email changes
+- **Well Tested**: Comprehensive test suite with 225+ tests
+- **Event-Driven**: Dispatches events for extensibility
+- **Symfony Flex**: Auto-discovery support for seamless installation
 
 ## Installation
 
@@ -20,7 +21,7 @@ A Symfony bundle that provides secure email address change functionality with ve
 composer require makraz/verify-email-change-bundle
 ```
 
-If you're not using Symfony Flex, enable the bundle manually:
+The bundle supports **Symfony Flex auto-discovery** and will be registered automatically. If you're not using Flex, enable it manually:
 
 ```php
 // config/bundles.php
@@ -34,7 +35,7 @@ return [
 
 ### Step 1: Update Your User Entity
 
-Your User entity must implement `EmailChangeInterface`:
+Your User entity must implement `EmailChangeableInterface` (recommended) or the deprecated `EmailChangeInterface`:
 
 ```php
 <?php
@@ -42,10 +43,10 @@ Your User entity must implement `EmailChangeInterface`:
 namespace App\Entity;
 
 use Doctrine\ORM\Mapping as ORM;
-use Makraz\Bundle\VerifyEmailChange\Model\EmailChangeInterface;
+use Makraz\Bundle\VerifyEmailChange\Model\EmailChangeableInterface;
 
 #[ORM\Entity]
-class User implements EmailChangeInterface
+class User implements EmailChangeableInterface
 {
     #[ORM\Id]
     #[ORM\GeneratedValue]
@@ -72,23 +73,10 @@ class User implements EmailChangeInterface
         $this->email = $email;
         return $this;
     }
-
-    // Required by EmailChangeInterface
-    public function hasPendingEmailChange(): bool
-    {
-        // Implement this or use Twig functions (recommended)
-        return false;
-    }
-
-    public function getPendingEmail(): ?string
-    {
-        // Implement this or use Twig functions (recommended)
-        return null;
-    }
 }
 ```
 
-> **Note:** The `hasPendingEmailChange()` and `getPendingEmail()` methods are required by the interface but can return default values if you use the built-in Twig functions (recommended approach - see below).
+> **Note:** `EmailChangeableInterface` only requires `getId()`, `getEmail()`, and `setEmail()`. The older `EmailChangeInterface` is deprecated since v1.1 and will be removed in v2.0.
 
 ### Step 2: Create the Database Table
 
@@ -161,26 +149,13 @@ class EmailChangeController extends AbstractController
         $newEmail = $request->request->get('new_email');
 
         try {
-            // Optional: Validate the new email
-            if ($newEmail === $user->getEmail()) {
-                throw new \Makraz\Bundle\VerifyEmailChange\Exception\SameEmailException($newEmail);
-            }
-
-            // Optional: Check if email is already in use
-            $existingUser = $this->entityManager->getRepository(User::class)
-                ->findOneBy(['email' => $newEmail]);
-            if ($existingUser) {
-                throw new \Makraz\Bundle\VerifyEmailChange\Exception\EmailAlreadyInUseException($newEmail);
-            }
-
             // Generate the verification signature
             $signature = $this->emailChangeHelper->generateSignature(
-                'app_email_change_verify', // Your verify route name
+                'app_email_change_verify',
                 $user,
                 $newEmail
             );
 
-            // Persist the pending email change
             $this->entityManager->flush();
 
             // Send verification email to the NEW address
@@ -207,22 +182,9 @@ class EmailChangeController extends AbstractController
     public function verify(Request $request): Response
     {
         try {
-            // Validate the link and get the user
             $user = $this->emailChangeHelper->validateTokenAndFetchUser($request);
-
-            // Complete the email change
             $oldEmail = $this->emailChangeHelper->confirmEmailChange($user);
-
-            // Persist changes
             $this->entityManager->flush();
-
-            // Send notification to OLD email (optional but recommended)
-            $email = (new Email())
-                ->to($oldEmail)
-                ->subject('Your email address was changed')
-                ->html('Your email address has been successfully changed. If you did not make this change, contact support immediately.');
-
-            $this->mailer->send($email);
 
             $this->addFlash('success', 'Email changed successfully!');
         } catch (VerifyEmailChangeExceptionInterface $e) {
@@ -285,47 +247,29 @@ The bundle provides Twig functions to easily display pending email change status
 - **`has_pending_email_change(user)`**: Returns `true` if the user has a pending, non-expired email change request
 - **`get_pending_email(user)`**: Returns the pending new email address, or `null` if none exists
 
-### Alternative: Using the Helper Service
-
-You can also check for pending changes directly in your controller:
-
-```php
-public function profile(EmailChangeHelper $helper): Response
-{
-    $user = $this->getUser();
-
-    if ($helper->hasPendingEmailChange($user)) {
-        $pendingEmail = $helper->getPendingEmail($user);
-        // ... use in your response
-    }
-
-    return $this->render('profile.html.twig');
-}
-```
-
 ## How It Works
 
 ### Flow Diagram
 
 ```
 User requests email change
-    ↓
+    |
 EmailChangeHelper::generateSignature()
-    ↓
+    |
 Token created & stored (hashed)
-    ↓
+    |
 Verification email sent to NEW address
-    ↓
+    |
 User clicks link
-    ↓
+    |
 EmailChangeHelper::validateTokenAndFetchUser()
-    ↓
+    |
 Token validated (timing-safe comparison)
-    ↓
+    |
 EmailChangeHelper::confirmEmailChange()
-    ↓
+    |
 Email updated, request deleted
-    ↓
+    |
 Notification sent to OLD address
 ```
 
@@ -333,104 +277,89 @@ Notification sent to OLD address
 
 ### EmailChangeHelper
 
-#### `generateSignature()`
+All methods accept `EmailChangeableInterface` (the new recommended interface). Objects implementing the deprecated `EmailChangeInterface` continue to work without changes.
 
-Generate a signed verification URL for an email change request.
+#### `generateSignature()`
 
 ```php
 public function generateSignature(
     string $routeName,
-    EmailChangeInterface $user,
+    EmailChangeableInterface $user,
     string $newEmail,
     array $extraParams = []
 ): EmailChangeSignature
 ```
 
-**Parameters:**
-- `$routeName`: The route name for your verification endpoint
-- `$user`: The user requesting the change
-- `$newEmail`: The new email address
-- `$extraParams`: Additional route parameters (optional)
-
-**Returns:** `EmailChangeSignature` with the signed URL and expiration info
-
-**Throws:**
-- `TooManyEmailChangeRequestsException`: If user has a recent pending request
-
 #### `validateTokenAndFetchUser()`
 
-Validate an email change request from URL parameters.
-
 ```php
-public function validateTokenAndFetchUser(Request $request): EmailChangeInterface
+public function validateTokenAndFetchUser(Request $request): EmailChangeableInterface
 ```
-
-**Returns:** The user who initiated the email change
-
-**Throws:**
-- `ExpiredEmailChangeRequestException`: If the link has expired
-- `InvalidEmailChangeRequestException`: If the link is invalid
 
 #### `confirmEmailChange()`
 
-Complete the email change after validation.
-
 ```php
-public function confirmEmailChange(EmailChangeInterface $user): string
+public function confirmEmailChange(EmailChangeableInterface $user): string
 ```
 
-**Returns:** The user's old email address (for notifications)
-
-**Throws:**
-- `InvalidEmailChangeRequestException`: If no pending request exists
+Returns the user's old email address.
 
 #### `cancelEmailChange()`
 
-Cancel a pending email change.
-
 ```php
-public function cancelEmailChange(EmailChangeInterface $user): void
+public function cancelEmailChange(EmailChangeableInterface $user): void
 ```
 
 #### `hasPendingEmailChange()`
 
-Check if a user has a pending email change request.
-
 ```php
-public function hasPendingEmailChange(EmailChangeInterface $user): bool
+public function hasPendingEmailChange(EmailChangeableInterface $user): bool
 ```
-
-**Returns:** `true` if the user has a non-expired pending request, `false` otherwise
 
 #### `getPendingEmail()`
 
-Get the pending new email address for a user.
-
 ```php
-public function getPendingEmail(EmailChangeInterface $user): ?string
+public function getPendingEmail(EmailChangeableInterface $user): ?string
 ```
 
-**Returns:** The pending new email address, or `null` if no pending request exists
+## Maintenance
 
-#### `hasPendingRequest()`
+### Purging Expired Requests
 
-Check if a user has a pending email change request (returns full request object).
+Expired email change requests remain in the database until purged. Use the built-in console command to clean them up:
 
-```php
-public function hasPendingRequest(EmailChangeInterface $user): bool
+```bash
+# Purge all expired requests
+php bin/console verify:email-change:purge-expired
+
+# Preview what would be purged (no changes made)
+php bin/console verify:email-change:purge-expired --dry-run
+
+# Purge only requests that expired more than 24 hours ago
+php bin/console verify:email-change:purge-expired --older-than=86400
+
+# Combine options
+php bin/console verify:email-change:purge-expired --dry-run --older-than=3600
 ```
 
-**Returns:** `true` if the user has a non-expired pending request, `false` otherwise
+**Recommended:** Add a cron job or Symfony Scheduler task to purge regularly:
 
-#### `getPendingRequest()`
-
-Get the full pending email change request for a user.
-
-```php
-public function getPendingRequest(EmailChangeInterface $user): ?EmailChangeRequest
+```bash
+# Run daily at midnight
+0 0 * * * cd /path/to/project && php bin/console verify:email-change:purge-expired --older-than=86400
 ```
 
-**Returns:** The `EmailChangeRequest` object, or `null` if no pending request exists
+Or with Symfony Scheduler:
+
+```php
+use Symfony\Component\Scheduler\Attribute\AsPeriodicTask;
+
+#[AsPeriodicTask('1 day')]
+class PurgeExpiredEmailChangeRequestsMessage
+{
+    // This message triggers the purge command
+}
+```
 
 ## Events
 
@@ -453,8 +382,6 @@ class EmailChangeListener
         $newEmail = $event->getNewEmail();
         $oldEmail = $event->getOldEmail();
         $verificationUrl = $event->getVerificationUrl();
-
-        // Send custom email, log, etc.
     }
 }
 ```
@@ -462,23 +389,6 @@ class EmailChangeListener
 ### `EmailChangeConfirmedEvent`
 
 Dispatched when an email change is confirmed.
-
-```php
-use Makraz\Bundle\VerifyEmailChange\Event\EmailChangeConfirmedEvent;
-
-#[AsEventListener]
-class EmailChangeConfirmedListener
-{
-    public function __invoke(EmailChangeConfirmedEvent $event): void
-    {
-        $user = $event->getUser();
-        $oldEmail = $event->getOldEmail();
-        $newEmail = $event->getNewEmail();
-
-        // Send notification to old email, reset email verification, etc.
-    }
-}
-```
 
 ### `EmailChangeCancelledEvent`
 
@@ -502,61 +412,15 @@ verify_email_change:
 
 ## Exception Reference
 
-All exceptions implement `VerifyEmailChangeExceptionInterface` and can be caught using this interface or individually.
+All exceptions implement `VerifyEmailChangeExceptionInterface`.
 
-### `EmailAlreadyInUseException`
-
-Thrown when attempting to change to an email address that is already in use by another user.
-
-**Usage:**
-```php
-use Makraz\Bundle\VerifyEmailChange\Exception\EmailAlreadyInUseException;
-
-// Check if email is already in use
-$existingUser = $entityManager->getRepository(User::class)
-    ->findOneBy(['email' => $newEmail]);
-
-if ($existingUser) {
-    throw new EmailAlreadyInUseException($newEmail);
-}
-```
-
-**Error Message:** "This email address is already in use."
-
-### `SameEmailException`
-
-Thrown when attempting to change to the same email address as the current one.
-
-**Usage:**
-```php
-use Makraz\Bundle\VerifyEmailChange\Exception\SameEmailException;
-
-if ($newEmail === $user->getEmail()) {
-    throw new SameEmailException($newEmail);
-}
-```
-
-**Error Message:** "The new email address is identical to the current one."
-
-### `TooManyEmailChangeRequestsException`
-
-Thrown when a user tries to create a new email change request too soon after a previous one.
-
-**Error Message:** "Please wait before requesting another email change."
-
-### `ExpiredEmailChangeRequestException`
-
-Thrown when attempting to verify an email change link that has expired.
-
-**Error Message:** "The email change link has expired."
-
-### `InvalidEmailChangeRequestException`
-
-Thrown when the email change verification link is invalid or the request doesn't exist.
-
-**Error Message:** Varies depending on the specific validation failure.
-
-### Catching All Exceptions
+| Exception | When | Message |
+|---|---|---|
+| `SameEmailException` | New email equals current email | "The new email address is identical to the current one." |
+| `EmailAlreadyInUseException` | Email taken by another user | "This email address is already in use." |
+| `TooManyEmailChangeRequestsException` | Request too soon after previous | "You have already requested an email change..." |
+| `ExpiredEmailChangeRequestException` | Verification link expired | "The email change link has expired." |
+| `InvalidEmailChangeRequestException` | Invalid or tampered link | Varies |
 
 ```php
 use Makraz\Bundle\VerifyEmailChange\Exception\VerifyEmailChangeExceptionInterface;
@@ -566,6 +430,25 @@ try {
 } catch (VerifyEmailChangeExceptionInterface $e) {
     $this->addFlash('error', $e->getReason());
 }
+```
+
+## Upgrading
+
+### From v1.0 to v1.1
+
+**Interface change (non-breaking):**
+- `EmailChangeInterface` is now deprecated. Migrate to `EmailChangeableInterface` which only requires `getId()`, `getEmail()`, and `setEmail()`.
+- Classes implementing `EmailChangeInterface` continue to work without changes.
+
+```diff
+-use Makraz\Bundle\VerifyEmailChange\Model\EmailChangeInterface;
++use Makraz\Bundle\VerifyEmailChange\Model\EmailChangeableInterface;
+
+-class User implements EmailChangeInterface
++class User implements EmailChangeableInterface
+ {
+-    // Can remove hasPendingEmailChange() and getPendingEmail()
+ }
 ```
 
 ## Testing
