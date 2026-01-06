@@ -10,6 +10,7 @@ use Makraz\Bundle\VerifyEmailChange\Entity\EmailChangeRequest;
 use Makraz\Bundle\VerifyEmailChange\Exception\ExpiredEmailChangeRequestException;
 use Makraz\Bundle\VerifyEmailChange\Exception\InvalidEmailChangeRequestException;
 use Makraz\Bundle\VerifyEmailChange\Exception\TooManyEmailChangeRequestsException;
+use Makraz\Bundle\VerifyEmailChange\Exception\TooManyVerificationAttemptsException;
 use Makraz\Bundle\VerifyEmailChange\Generator\EmailChangeTokenGenerator;
 use Makraz\Bundle\VerifyEmailChange\Model\EmailChangeableInterface;
 use Makraz\Bundle\VerifyEmailChange\Persistence\EmailChangeRequestRepositoryInterface;
@@ -22,7 +23,8 @@ class EmailChangeHelper
         private readonly EmailChangeRequestRepositoryInterface $repository,
         private readonly EmailChangeTokenGenerator $tokenGenerator,
         private readonly UrlGeneratorInterface $urlGenerator,
-        private readonly int $requestLifetime = 3600, // 1 hour default
+        private readonly int $requestLifetime = 3600,
+        private readonly int $maxAttempts = 5,
     ) {
     }
 
@@ -109,6 +111,14 @@ class EmailChangeHelper
         }
 
         if (!$this->tokenGenerator->verifyToken($emailChangeRequest, $token)) {
+            $emailChangeRequest->incrementAttempts();
+
+            if ($emailChangeRequest->getAttempts() >= $this->maxAttempts) {
+                $this->repository->removeEmailChangeRequest($emailChangeRequest);
+                throw new TooManyVerificationAttemptsException($this->maxAttempts);
+            }
+
+            $this->repository->persistEmailChangeRequest($emailChangeRequest);
             throw new InvalidEmailChangeRequestException('Invalid verification token.');
         }
 

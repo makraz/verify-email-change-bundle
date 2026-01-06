@@ -30,6 +30,11 @@ class Configuration implements ConfigurationInterface
                     ->defaultValue(3600)
                     ->min(60)
                 ->end()
+                ->integerNode('max_attempts')
+                    ->info('Maximum number of failed verification attempts before auto-invalidation')
+                    ->defaultValue(5)
+                    ->min(1)
+                ->end()
             ->end()
         ;
 

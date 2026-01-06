@@ -43,6 +43,9 @@ class EmailChangeRequest
     #[ORM\Column(type: Types::STRING, length: 255)]
     private string $userIdentifier;
 
+    #[ORM\Column(type: Types::INTEGER, options: ['default' => 0])]
+    private int $attempts = 0;
+
     public function __construct(
         EmailChangeableInterface $user,
         \DateTimeImmutable $expiresAt,
@@ -116,5 +119,15 @@ class EmailChangeRequest
     public function belongsTo(EmailChangeableInterface $user): bool
     {
         return $this->userIdentifier === $this->createUserIdentifier($user);
+    }
+
+    public function getAttempts(): int
+    {
+        return $this->attempts;
+    }
+
+    public function incrementAttempts(): void
+    {
+        ++$this->attempts;
     }
 }

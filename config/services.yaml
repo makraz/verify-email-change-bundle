@@ -14,6 +14,7 @@ services:
     Makraz\Bundle\VerifyEmailChange\EmailChange\EmailChangeHelper:
         arguments:
             $requestLifetime: '%verify_email_change.lifetime%'
+            $maxAttempts: '%verify_email_change.max_attempts%'
 
     # Twig Extension
     Makraz\Bundle\VerifyEmailChange\Twig\EmailChangeExtension:

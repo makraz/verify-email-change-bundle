@@ -22,5 +22,6 @@ class MakrazVerifyEmailChangeExtension extends Extension
         $container->setParameter('verify_email_change.lifetime', $config['lifetime']);
         $container->setParameter('verify_email_change.enable_throttling', $config['enable_throttling']);
         $container->setParameter('verify_email_change.throttle_limit', $config['throttle_limit']);
+        $container->setParameter('verify_email_change.max_attempts', $config['max_attempts']);
     }
 }
