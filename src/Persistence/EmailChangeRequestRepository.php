@@ -54,6 +54,13 @@ class EmailChangeRequestRepository implements EmailChangeRequestRepositoryInterf
         $this->entityManager->flush();
     }
 
+    public function findByOldEmailSelector(string $selector): ?EmailChangeRequest
+    {
+        $repository = $this->entityManager->getRepository(EmailChangeRequest::class);
+
+        return $repository->findOneBy(['oldEmailSelector' => $selector]);
+    }
+
     public function removeExpiredEmailChangeRequests(): int
     {
         $qb = $this->entityManager->createQueryBuilder();

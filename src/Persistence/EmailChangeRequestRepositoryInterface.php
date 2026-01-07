@@ -53,6 +53,11 @@ interface EmailChangeRequestRepositoryInterface
     public function removeExpiredOlderThan(\DateTimeImmutable $cutoff): int;
 
     /**
+     * Find an email change request by old email selector (for dual verification mode).
+     */
+    public function findByOldEmailSelector(string $selector): ?EmailChangeRequest;
+
+    /**
      * Count expired email change requests older than the given cutoff.
      *
      * @return int Number of expired requests

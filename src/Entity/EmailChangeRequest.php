@@ -46,6 +46,18 @@ class EmailChangeRequest
     #[ORM\Column(type: Types::INTEGER, options: ['default' => 0])]
     private int $attempts = 0;
 
+    #[ORM\Column(type: Types::BOOLEAN, options: ['default' => false])]
+    private bool $confirmedByNewEmail = false;
+
+    #[ORM\Column(type: Types::BOOLEAN, options: ['default' => false])]
+    private bool $confirmedByOldEmail = false;
+
+    #[ORM\Column(type: Types::STRING, length: 100, nullable: true)]
+    private ?string $oldEmailHashedToken = null;
+
+    #[ORM\Column(type: Types::STRING, length: 20, nullable: true)]
+    private ?string $oldEmailSelector = null;
+
     public function __construct(
         EmailChangeableInterface $user,
         \DateTimeImmutable $expiresAt,
@@ -129,5 +141,54 @@ class EmailChangeRequest
     public function incrementAttempts(): void
     {
         ++$this->attempts;
+    }
+
+    public function isConfirmedByNewEmail(): bool
+    {
+        return $this->confirmedByNewEmail;
+    }
+
+    public function setConfirmedByNewEmail(bool $confirmed): void
+    {
+        $this->confirmedByNewEmail = $confirmed;
+    }
+
+    public function isConfirmedByOldEmail(): bool
+    {
+        return $this->confirmedByOldEmail;
+    }
+
+    public function setConfirmedByOldEmail(bool $confirmed): void
+    {
+        $this->confirmedByOldEmail = $confirmed;
+    }
+
+    public function getOldEmailHashedToken(): ?string
+    {
+        return $this->oldEmailHashedToken;
+    }
+
+    public function setOldEmailHashedToken(?string $hashedToken): void
+    {
+        $this->oldEmailHashedToken = $hashedToken;
+    }
+
+    public function getOldEmailSelector(): ?string
+    {
+        return $this->oldEmailSelector;
+    }
+
+    public function setOldEmailSelector(?string $selector): void
+    {
+        $this->oldEmailSelector = $selector;
+    }
+
+    public function isFullyConfirmed(bool $dualMode): bool
+    {
+        if (!$dualMode) {
+            return true;
+        }
+
+        return $this->confirmedByNewEmail && $this->confirmedByOldEmail;
     }
 }

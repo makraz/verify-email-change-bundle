@@ -35,6 +35,10 @@ class Configuration implements ConfigurationInterface
                     ->defaultValue(5)
                     ->min(1)
                 ->end()
+                ->booleanNode('require_old_email_confirmation')
+                    ->info('Require confirmation from the old email address before completing email change')
+                    ->defaultValue(false)
+                ->end()
             ->end()
         ;
 

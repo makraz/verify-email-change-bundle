@@ -25,20 +25,17 @@ class EmailChangeHelper
         private readonly UrlGeneratorInterface $urlGenerator,
         private readonly int $requestLifetime = 3600,
         private readonly int $maxAttempts = 5,
+        private readonly bool $requireOldEmailConfirmation = false,
     ) {
     }
 
     /**
      * Generate a signed verification URL for an email change request.
      *
-     * @param string $routeName     The route name for the verification endpoint
-     * @param EmailChangeableInterface $user The user requesting the change
-     * @param string $newEmail      The new email address
-     * @param array  $extraParams   Additional route parameters
+     * In dual verification mode, returns an EmailChangeDualSignature containing
+     * URLs for both the new and old email addresses.
      *
      * @throws TooManyEmailChangeRequestsException if user has a recent pending request
-     *
-     * @return EmailChangeSignature Contains the signed URL and expiration info
      */
     public function generateSignature(
         string $routeName,
@@ -69,6 +66,13 @@ class EmailChangeHelper
             $newEmail
         );
 
+        // In dual mode, generate a second token for old email confirmation
+        if ($this->requireOldEmailConfirmation) {
+            $oldEmailTokenComponents = $this->tokenGenerator->createToken($expiresAt, $user->getId(), $user->getEmail());
+            $emailChangeRequest->setOldEmailSelector($oldEmailTokenComponents->getSelector());
+            $emailChangeRequest->setOldEmailHashedToken($oldEmailTokenComponents->getHashedToken());
+        }
+
         $this->repository->persistEmailChangeRequest($emailChangeRequest);
 
         $url = $this->urlGenerator->generate(
@@ -80,6 +84,20 @@ class EmailChangeHelper
             UrlGeneratorInterface::ABSOLUTE_URL
         );
 
+        if ($this->requireOldEmailConfirmation) {
+            $oldEmailUrl = $this->urlGenerator->generate(
+                $routeName,
+                array_merge($extraParams, [
+                    'selector' => $oldEmailTokenComponents->getSelector(),
+                    'token' => $oldEmailTokenComponents->getToken(),
+                    'confirm_old' => '1',
+                ]),
+                UrlGeneratorInterface::ABSOLUTE_URL
+            );
+
+            return new EmailChangeDualSignature($url, $oldEmailUrl, $expiresAt);
+        }
+
         return new EmailChangeSignature($url, $expiresAt);
     }
 
@@ -88,6 +106,7 @@ class EmailChangeHelper
      *
      * @throws ExpiredEmailChangeRequestException  if the link has expired
      * @throws InvalidEmailChangeRequestException if the link is invalid
+     * @throws TooManyVerificationAttemptsException if max attempts exceeded
      *
      * @return EmailChangeableInterface The user who initiated the email change
      */
@@ -122,6 +141,54 @@ class EmailChangeHelper
             throw new InvalidEmailChangeRequestException('Invalid verification token.');
         }
 
+        if ($this->requireOldEmailConfirmation) {
+            $emailChangeRequest->setConfirmedByNewEmail(true);
+            $this->repository->persistEmailChangeRequest($emailChangeRequest);
+        }
+
+        $user = $this->repository->getUserFromRequest($emailChangeRequest);
+
+        if (!$user) {
+            throw new InvalidEmailChangeRequestException('User not found.');
+        }
+
+        return $user;
+    }
+
+    /**
+     * Validate an old email confirmation token.
+     *
+     * @throws InvalidEmailChangeRequestException if the token is invalid
+     * @throws ExpiredEmailChangeRequestException if the link has expired
+     */
+    public function validateOldEmailToken(Request $request): EmailChangeableInterface
+    {
+        $selector = $request->query->get('selector');
+        $token = $request->query->get('token');
+
+        if (!$selector || !$token || !is_string($selector) || !is_string($token)) {
+            throw new InvalidEmailChangeRequestException('Missing or invalid verification parameters.');
+        }
+
+        // Find by old email selector
+        $emailChangeRequest = $this->repository->findByOldEmailSelector($selector);
+
+        if (!$emailChangeRequest) {
+            throw new InvalidEmailChangeRequestException('Invalid verification link.');
+        }
+
+        if ($emailChangeRequest->isExpired()) {
+            throw new ExpiredEmailChangeRequestException();
+        }
+
+        $hashedToken = $emailChangeRequest->getOldEmailHashedToken();
+        if (!$hashedToken || !hash_equals($hashedToken, hash('sha256', $token))) {
+            throw new InvalidEmailChangeRequestException('Invalid verification token.');
+        }
+
+        $emailChangeRequest->setConfirmedByOldEmail(true);
+        $this->repository->persistEmailChangeRequest($emailChangeRequest);
+
         $user = $this->repository->getUserFromRequest($emailChangeRequest);
 
         if (!$user) {
@@ -134,7 +201,7 @@ class EmailChangeHelper
     /**
      * Complete the email change after validation.
      *
-     * @throws InvalidEmailChangeRequestException if no pending request exists
+     * @throws InvalidEmailChangeRequestException if no pending request exists or not fully confirmed
      *
      * @return string The user's old email address
      */
@@ -144,6 +211,10 @@ class EmailChangeHelper
 
         if (!$emailChangeRequest) {
             throw new InvalidEmailChangeRequestException('No pending email change found.');
+        }
+
+        if (!$emailChangeRequest->isFullyConfirmed($this->requireOldEmailConfirmation)) {
+            throw new InvalidEmailChangeRequestException('Email change requires confirmation from both old and new email addresses.');
         }
 
         $newEmail = $emailChangeRequest->getNewEmail();
@@ -160,8 +231,6 @@ class EmailChangeHelper
 
     /**
      * Cancel a pending email change.
-     *
-     * Note: You must call flush() to persist the changes!
      */
     public function cancelEmailChange(EmailChangeableInterface $user): void
     {
@@ -210,5 +279,10 @@ class EmailChangeHelper
         $request = $this->repository->findEmailChangeRequest($user);
 
         return $request && !$request->isExpired() ? $request : null;
+    }
+
+    public function isRequireOldEmailConfirmation(): bool
+    {
+        return $this->requireOldEmailConfirmation;
     }
 }

@@ -59,6 +59,17 @@ class EmailChangeRequestTestRepository implements EmailChangeRequestRepositoryIn
         $this->users[$identifier] = $user;
     }
 
+    public function findByOldEmailSelector(string $selector): ?EmailChangeRequest
+    {
+        foreach ($this->requestsBySelector as $request) {
+            if ($request->getOldEmailSelector() === $selector) {
+                return $request;
+            }
+        }
+
+        return null;
+    }
+
     public function removeEmailChangeRequest(EmailChangeRequest $request): void
     {
         unset($this->requestsBySelector[$request->getSelector()]);
