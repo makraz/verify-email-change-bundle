@@ -11,7 +11,10 @@ A Symfony bundle that provides secure email address change functionality with ve
 - **Built-in Throttling**: Prevents abuse with configurable rate limiting
 - **Flexible**: You control email sending, UI, and password verification
 - **Twig Integration**: Built-in Twig functions for checking pending email changes
-- **Well Tested**: Comprehensive test suite with 225+ tests
+- **Max Verification Attempts**: Auto-invalidation after configurable failed attempts
+- **Dual Verification Mode**: Optional confirmation from both old and new email addresses
+- **CSRF Protection**: Built-in helper for cancel endpoint security
+- **Well Tested**: Comprehensive test suite with 250+ tests
 - **Event-Driven**: Dispatches events for extensibility
 - **Symfony Flex**: Auto-discovery support for seamless installation
 
@@ -111,6 +114,8 @@ verify_email_change:
     lifetime: 3600              # Link expires after 1 hour (default)
     enable_throttling: true     # Prevent abuse (default: true)
     throttle_limit: 3600        # Wait time between requests (default: 1 hour)
+    max_attempts: 5             # Max verification attempts before invalidation (default: 5)
+    require_old_email_confirmation: false  # Require old email confirmation too (default: false)
 ```
 
 ### Step 4: Create Your Controller
@@ -394,6 +399,115 @@ Dispatched when an email change is confirmed.
 
 Dispatched when an email change is cancelled.
 
+## Security
+
+### Dual Verification Mode
+
+For high-security applications, enable dual verification to require confirmation from **both** the old and new email addresses:
+
+```yaml
+# config/packages/verify_email_change.yaml
+verify_email_change:
+    require_old_email_confirmation: true
+```
+
+When enabled, `generateSignature()` returns an `EmailChangeDualSignature` with two URLs:
+
+```php
+$signature = $this->emailChangeHelper->generateSignature(
+    'app_email_change_verify',
+    $user,
+    $newEmail
+);
+
+// Send verification to the NEW email address
+$this->sendEmail($newEmail, $signature->getSignedUrl());
+
+// Also send confirmation to the OLD email address
+if ($signature instanceof EmailChangeDualSignature) {
+    $this->sendEmail($user->getEmail(), $signature->getOldEmailSignedUrl());
+}
+```
+
+Handle old email verification in your controller:
+
+```php
+#[Route('/account/email/verify-old', name: 'app_email_change_verify_old')]
+public function verifyOldEmail(Request $request): Response
+{
+    try {
+        $user = $this->emailChangeHelper->validateOldEmailToken($request);
+        // Check if both confirmations are done
+        $oldEmail = $this->emailChangeHelper->confirmEmailChange($user);
+        $this->entityManager->flush();
+        $this->addFlash('success', 'Email changed successfully!');
+    } catch (VerifyEmailChangeExceptionInterface $e) {
+        $this->addFlash('info', $e->getReason());
+    }
+
+    return $this->redirectToRoute('app_profile');
+}
+```
+
+### Max Verification Attempts
+
+The bundle automatically invalidates verification links after a configurable number of failed attempts (default: 5):
+
+```yaml
+verify_email_change:
+    max_attempts: 5
+```
+
+After exceeding the limit, a `TooManyVerificationAttemptsException` is thrown and the request is removed.
+
+### CSRF Protection for Cancel Endpoint
+
+The bundle provides a `CsrfTokenHelper` to protect the cancel endpoint:
+
+```php
+use Makraz\Bundle\VerifyEmailChange\Security\CsrfTokenHelper;
+
+class EmailChangeController extends AbstractController
+{
+    public function __construct(
+        private readonly EmailChangeHelper $emailChangeHelper,
+        private readonly CsrfTokenHelper $csrfHelper,
+    ) {}
+
+    #[Route('/account/email/cancel', name: 'app_email_change_cancel', methods: ['POST'])]
+    public function cancel(Request $request): Response
+    {
+        if (!$this->csrfHelper->isTokenValid($request)) {
+            throw $this->createAccessDeniedException('Invalid CSRF token.');
+        }
+
+        $this->emailChangeHelper->cancelEmailChange($this->getUser());
+        $this->addFlash('success', 'Email change cancelled.');
+        return $this->redirectToRoute('app_profile');
+    }
+}
+```
+
+In your Twig template:
+
+```twig
+<form method="post" action="{{ path('app_email_change_cancel') }}">
+    <input type="hidden" name="_csrf_token" value="{{ csrf_token('email_change_cancel') }}">
+    <button type="submit">Cancel Email Change</button>
+</form>
+```
+
+### Security Recommendations
+
+1. **Always require password confirmation** before initiating an email change
+2. **Enable dual verification** (`require_old_email_confirmation: true`) for sensitive applications
+3. **Use CSRF protection** on the cancel endpoint (see above)
+4. **Send a notification** to the old email address when an email change is initiated
+5. **Keep verification link lifetimes short** (1 hour is recommended)
+6. **Set up the purge command** as a cron job to clean expired requests
+7. **Use HTTPS** for all verification URLs (the bundle uses `UrlGeneratorInterface::ABSOLUTE_URL`)
+8. **Monitor events** — listen to `EmailChangeInitiatedEvent` for audit logging
+
 ## Configuration Reference
 
 ```yaml
@@ -408,6 +522,12 @@ verify_email_change:
     # Time in seconds before a new request can be made
     # Only used if enable_throttling is true
     throttle_limit: 3600  # default: 1 hour
+
+    # Maximum number of failed verification attempts before invalidation
+    max_attempts: 5  # default: 5
+
+    # Require confirmation from both old and new email addresses
+    require_old_email_confirmation: false  # default: false
 ```
 
 ## Exception Reference
@@ -419,6 +539,7 @@ All exceptions implement `VerifyEmailChangeExceptionInterface`.
 | `SameEmailException` | New email equals current email | "The new email address is identical to the current one." |
 | `EmailAlreadyInUseException` | Email taken by another user | "This email address is already in use." |
 | `TooManyEmailChangeRequestsException` | Request too soon after previous | "You have already requested an email change..." |
+| `TooManyVerificationAttemptsException` | Max attempts exceeded | "Too many verification attempts (max: N)." |
 | `ExpiredEmailChangeRequestException` | Verification link expired | "The email change link has expired." |
 | `InvalidEmailChangeRequestException` | Invalid or tampered link | Varies |
 
@@ -433,6 +554,32 @@ try {
 ```
 
 ## Upgrading
+
+### From v1.1 to v1.2
+
+**New features (non-breaking):**
+- Max verification attempts protection — enabled by default (5 attempts). Configure with `max_attempts`.
+- Dual verification mode — opt-in with `require_old_email_confirmation: true`.
+- CSRF token helper — optional service for cancel endpoint protection.
+
+**Database migration required:** The `email_change_request` table has new columns:
+
+```sql
+ALTER TABLE email_change_request
+    ADD attempts INT DEFAULT 0 NOT NULL,
+    ADD confirmed_by_new_email TINYINT(1) DEFAULT 0 NOT NULL,
+    ADD confirmed_by_old_email TINYINT(1) DEFAULT 0 NOT NULL,
+    ADD old_email_hashed_token VARCHAR(100) DEFAULT NULL,
+    ADD old_email_selector VARCHAR(20) DEFAULT NULL;
+CREATE UNIQUE INDEX email_change_old_selector_idx ON email_change_request (old_email_selector);
+```
+
+Or use Doctrine migrations:
+
+```bash
+php bin/console doctrine:migrations:diff
+php bin/console doctrine:migrations:migrate
+```
 
 ### From v1.0 to v1.1
 
