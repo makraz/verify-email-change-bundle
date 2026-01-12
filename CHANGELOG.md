@@ -5,6 +5,26 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.2.0] - 2026-02-10
+
+### Added
+- Max verification attempts with auto-invalidation (default: 5 attempts)
+- `TooManyVerificationAttemptsException` for exceeded attempts
+- Optional dual verification mode requiring confirmation from both old and new email addresses
+- `EmailChangeDualSignature` value object with `getOldEmailSignedUrl()` for dual mode
+- `validateOldEmailToken()` method on `EmailChangeHelper`
+- `EmailChangeNewEmailConfirmedEvent` and `EmailChangeOldEmailConfirmedEvent` events
+- `CsrfTokenHelper` service for protecting the cancel endpoint
+- `max_attempts` configuration option
+- `require_old_email_confirmation` configuration option
+- Repository method `findByOldEmailSelector()` for dual mode lookups
+- Entity fields: `attempts`, `confirmedByNewEmail`, `confirmedByOldEmail`, `oldEmailHashedToken`, `oldEmailSelector`
+
+### Security
+- Verification links are automatically invalidated after configurable failed attempts
+- Dual verification mode prevents account takeover by requiring old email confirmation
+- CSRF token helper prevents cross-site request forgery on cancel endpoint
+
 ## [1.1.0] - 2026-02-10
 
 ### Added
