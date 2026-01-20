@@ -17,6 +17,7 @@
         "symfony/http-foundation": "^6.4|^7.0",
         "symfony/routing": "^6.4|^7.0",
         "symfony/event-dispatcher": "^6.4|^7.0",
+        "symfony/translation": "^6.4|^7.0",
         "twig/twig": "^3.0"
     },
     "require-dev": {
