@@ -37,5 +37,14 @@ class MakrazVerifyEmailChangeExtension extends Extension implements PrependExten
                 ],
             ],
         ]);
+
+        // Register Twig templates
+        if ($container->hasExtension('twig')) {
+            $container->prependExtensionConfig('twig', [
+                'paths' => [
+                    __DIR__.'/../../templates' => 'MakrazVerifyEmailChange',
+                ],
+            ]);
+        }
     }
 }

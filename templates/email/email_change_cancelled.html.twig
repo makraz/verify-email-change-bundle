@@ -1,0 +1,18 @@
+{#
+  Default template for the notification email sent when an email change is cancelled.
+
+  Variables:
+    - cancelledEmail: string — The email address that was going to be the new email
+    - user: EmailChangeableInterface — The user who cancelled the change
+#}
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+</head>
+<body>
+    <h1>{{ 'verify_email_change.notification.cancelled_subject'|trans({}, 'verify_email_change') }}</h1>
+
+    <p>{{ 'verify_email_change.notification.cancelled_body'|trans({}, 'verify_email_change') }}</p>
+</body>
+</html>

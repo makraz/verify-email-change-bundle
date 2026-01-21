@@ -1,0 +1,29 @@
+{#
+  Default template for the verification email sent to the NEW email address.
+
+  Variables:
+    - signedUrl: string — The signed verification URL
+    - expiresAt: DateTimeImmutable — When the link expires
+    - newEmail: string — The new email address
+    - user: EmailChangeableInterface — The user requesting the change
+#}
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+</head>
+<body>
+    <h1>{{ 'verify_email_change.notification.verify_subject'|trans({}, 'verify_email_change') }}</h1>
+
+    <p>{{ 'verify_email_change.notification.verify_body'|trans({}, 'verify_email_change') }}</p>
+
+    <p>
+        <a href="{{ signedUrl }}">
+            {{ 'verify_email_change.notification.verify_link_text'|trans({}, 'verify_email_change') }}
+        </a>
+    </p>
+
+    {% set hours = ((expiresAt.timestamp - "now"|date("U")) / 3600)|round(0, 'ceil') %}
+    <p>{{ 'verify_email_change.notification.verify_expires'|trans({'%hours%': hours}, 'verify_email_change') }}</p>
+</body>
+</html>
