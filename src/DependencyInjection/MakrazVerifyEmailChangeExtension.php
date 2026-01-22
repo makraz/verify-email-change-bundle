@@ -4,11 +4,14 @@ declare(strict_types=1);
 
 namespace Makraz\Bundle\VerifyEmailChange\DependencyInjection;
 
+use Makraz\Bundle\VerifyEmailChange\Notifier\EmailChangeNotifier;
 use Symfony\Component\Config\FileLocator;
 use Symfony\Component\DependencyInjection\ContainerBuilder;
+use Symfony\Component\DependencyInjection\Definition;
 use Symfony\Component\DependencyInjection\Extension\Extension;
 use Symfony\Component\DependencyInjection\Extension\PrependExtensionInterface;
 use Symfony\Component\DependencyInjection\Loader\YamlFileLoader;
+use Symfony\Component\DependencyInjection\Reference;
 
 class MakrazVerifyEmailChangeExtension extends Extension implements PrependExtensionInterface
 {
@@ -25,6 +28,20 @@ class MakrazVerifyEmailChangeExtension extends Extension implements PrependExten
         $container->setParameter('verify_email_change.throttle_limit', $config['throttle_limit']);
         $container->setParameter('verify_email_change.max_attempts', $config['max_attempts']);
         $container->setParameter('verify_email_change.require_old_email_confirmation', $config['require_old_email_confirmation']);
+
+        // Register EmailChangeNotifier if enabled
+        if ($config['notifier']['enabled']) {
+            $notifierDefinition = new Definition(EmailChangeNotifier::class);
+            $notifierDefinition->setArguments([
+                new Reference('mailer'),
+                new Reference('twig'),
+                $config['notifier']['sender_email'],
+                $config['notifier']['sender_name'],
+            ]);
+            $notifierDefinition->setAutowired(false);
+            $notifierDefinition->setPublic(false);
+            $container->setDefinition(EmailChangeNotifier::class, $notifierDefinition);
+        }
     }
 
     public function prepend(ContainerBuilder $container): void

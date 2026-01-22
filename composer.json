@@ -24,6 +24,7 @@
         "doctrine/orm": "^2.14|^3.0",
         "doctrine/doctrine-bundle": "^2.10",
         "phpunit/phpunit": "^10.0",
+        "symfony/mailer": "^6.4|^7.0",
         "symfony/phpunit-bridge": "^6.4|^7.0",
         "symfony/validator": "^6.4|^7.0",
         "symfony/yaml": "^6.4|^7.0|^8.0"
