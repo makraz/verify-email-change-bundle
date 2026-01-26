@@ -14,7 +14,9 @@ A Symfony bundle that provides secure email address change functionality with ve
 - **Max Verification Attempts**: Auto-invalidation after configurable failed attempts
 - **Dual Verification Mode**: Optional confirmation from both old and new email addresses
 - **CSRF Protection**: Built-in helper for cancel endpoint security
-- **Well Tested**: Comprehensive test suite with 250+ tests
+- **Email Notifications**: Built-in `EmailChangeNotifier` service with Twig templates
+- **Translations**: Built-in translations for English, French, and Arabic
+- **Well Tested**: Comprehensive test suite with 300+ tests
 - **Event-Driven**: Dispatches events for extensibility
 - **Symfony Flex**: Auto-discovery support for seamless installation
 
@@ -508,6 +510,94 @@ In your Twig template:
 7. **Use HTTPS** for all verification URLs (the bundle uses `UrlGeneratorInterface::ABSOLUTE_URL`)
 8. **Monitor events** — listen to `EmailChangeInitiatedEvent` for audit logging
 
+## Email Notifications
+
+The bundle includes an optional `EmailChangeNotifier` service that handles sending verification and notification emails using the built-in Twig templates.
+
+### Enabling the Notifier
+
+```yaml
+# config/packages/verify_email_change.yaml
+verify_email_change:
+    notifier:
+        enabled: true
+        sender_email: 'noreply@example.com'
+        sender_name: 'My Application'  # optional
+```
+
+### Using the Notifier
+
+```php
+use Makraz\Bundle\VerifyEmailChange\EmailChange\EmailChangeHelper;
+use Makraz\Bundle\VerifyEmailChange\Notifier\EmailChangeNotifier;
+
+class EmailChangeController extends AbstractController
+{
+    public function __construct(
+        private readonly EmailChangeHelper $emailChangeHelper,
+        private readonly EmailChangeNotifier $notifier,
+    ) {}
+
+    public function request(Request $request): Response
+    {
+        $user = $this->getUser();
+        $newEmail = $request->request->get('new_email');
+
+        $signature = $this->emailChangeHelper->generateSignature(
+            'app_email_change_verify',
+            $user,
+            $newEmail
+        );
+
+        // Sends verification to new email (and old email in dual mode)
+        $this->notifier->sendVerificationEmail($user, $newEmail, $signature);
+
+        return $this->redirectToRoute('app_profile');
+    }
+
+    public function verify(Request $request): Response
+    {
+        $user = $this->emailChangeHelper->validateTokenAndFetchUser($request);
+        $oldEmail = $this->emailChangeHelper->confirmEmailChange($user);
+
+        // Notify old email address about the change
+        $this->notifier->sendEmailChangeConfirmation($user, $oldEmail, $user->getEmail());
+
+        return $this->redirectToRoute('app_profile');
+    }
+}
+```
+
+### Customizing Email Templates
+
+Override the default templates by creating files in your project:
+
+```
+templates/bundles/MakrazVerifyEmailChange/email/
+    verify_new_email.html.twig       # Verification email to new address
+    confirm_old_email.html.twig      # Confirmation email to old address (dual mode)
+    email_change_confirmed.html.twig # Change complete notification
+    email_change_cancelled.html.twig # Cancellation notification
+```
+
+## Translations
+
+The bundle includes translations for exception messages and email templates in:
+- **English** (`en`)
+- **French** (`fr`)
+- **Arabic** (`ar`)
+
+Translations are loaded automatically. To override them, create your own translation files:
+
+```yaml
+# translations/verify_email_change.en.yaml
+verify_email_change:
+    exception:
+        same_email: "Your custom message here"
+    notification:
+        verify_subject: "Custom subject"
+```
+
 ## Configuration Reference
 
 ```yaml
@@ -528,6 +618,12 @@ verify_email_change:
 
     # Require confirmation from both old and new email addresses
     require_old_email_confirmation: false  # default: false
+
+    # Optional email notifier service
+    notifier:
+        enabled: false  # default: false
+        sender_email: ~  # required when enabled
+        sender_name: ~   # optional
 ```
 
 ## Exception Reference
@@ -554,6 +650,15 @@ try {
 ```
 
 ## Upgrading
+
+### From v1.2 to v1.3
+
+**New features (non-breaking):**
+- Translation support for English, French, and Arabic
+- Default Twig email templates (`@MakrazVerifyEmailChange/email/...`)
+- Optional `EmailChangeNotifier` service for sending emails
+
+No database migration required. Enable the notifier in configuration if desired.
 
 ### From v1.1 to v1.2
 

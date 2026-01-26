@@ -5,6 +5,22 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.3.0] - 2026-02-10
+
+### Added
+- Translation support with built-in translations for English, French, and Arabic
+- Translation domain `verify_email_change` with exception messages and notification strings
+- Default Twig email templates for verification, confirmation, and cancellation emails
+  - `@MakrazVerifyEmailChange/email/verify_new_email.html.twig`
+  - `@MakrazVerifyEmailChange/email/confirm_old_email.html.twig`
+  - `@MakrazVerifyEmailChange/email/email_change_confirmed.html.twig`
+  - `@MakrazVerifyEmailChange/email/email_change_cancelled.html.twig`
+- `EmailChangeNotifier` service for sending notification emails
+  - Automatically handles single and dual verification modes
+  - Configurable sender email and name
+  - Uses built-in Twig templates (customizable via Symfony template overriding)
+- `notifier` configuration section to enable and configure the notifier service
+
 ## [1.2.0] - 2026-02-10
 
 ### Added
