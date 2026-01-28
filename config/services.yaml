@@ -3,9 +3,19 @@ services:
         autowire: true
         autoconfigure: true
 
-    # Repository
+    # Repository (Doctrine is the default adapter)
+    Makraz\Bundle\VerifyEmailChange\Persistence\Doctrine\DoctrineEmailChangeRequestRepository: ~
+
     Makraz\Bundle\VerifyEmailChange\Persistence\EmailChangeRequestRepositoryInterface:
-        class: Makraz\Bundle\VerifyEmailChange\Persistence\EmailChangeRequestRepository
+        alias: Makraz\Bundle\VerifyEmailChange\Persistence\Doctrine\DoctrineEmailChangeRequestRepository
+
+    # Backward compatibility alias (deprecated)
+    Makraz\Bundle\VerifyEmailChange\Persistence\EmailChangeRequestRepository:
+        alias: Makraz\Bundle\VerifyEmailChange\Persistence\Doctrine\DoctrineEmailChangeRequestRepository
+        deprecated:
+            package: 'makraz/verify-email-change-bundle'
+            version: '1.4'
+            message: 'The "%alias_id%" service is deprecated. Use "Makraz\Bundle\VerifyEmailChange\Persistence\Doctrine\DoctrineEmailChangeRequestRepository" instead.'
 
     # Token Generator
     Makraz\Bundle\VerifyEmailChange\Generator\EmailChangeTokenGenerator: ~
