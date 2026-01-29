@@ -29,6 +29,11 @@
         "symfony/validator": "^6.4|^7.0",
         "symfony/yaml": "^6.4|^7.0|^8.0"
     },
+    "suggest": {
+        "doctrine/orm": "Required for the Doctrine persistence adapter (default)",
+        "psr/cache-implementation": "Required for the Cache persistence adapter",
+        "symfony/mailer": "Required for the EmailChangeNotifier service"
+    },
     "autoload": {
         "psr-4": {
             "Makraz\\Bundle\\VerifyEmailChange\\": "src/"
