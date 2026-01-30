@@ -40,7 +40,9 @@ class CacheEmailChangeRequestRepository implements EmailChangeRequestRepositoryI
 
     public function persistEmailChangeRequest(EmailChangeRequest $request): void
     {
-        $ttl = max(0, $request->getExpiresAt()->getTimestamp() - time());
+        // Add a buffer to TTL so expired requests remain in cache for cleanup.
+        // Expiration is checked at the application level by the entity.
+        $ttl = max(3600, $request->getExpiresAt()->getTimestamp() - time() + 3600);
 
         // Store by selector
         $selectorItem = $this->cachePool->getItem(self::SELECTOR_PREFIX.$request->getSelector());
