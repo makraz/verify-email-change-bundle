@@ -3,9 +3,10 @@ services:
         autowire: true
         autoconfigure: true
 
-    # Repository (Doctrine is the default adapter)
+    # Persistence Adapters
     Makraz\Bundle\VerifyEmailChange\Persistence\Doctrine\DoctrineEmailChangeRequestRepository: ~
 
+    # Default alias (can be overridden by persistence config in the extension)
     Makraz\Bundle\VerifyEmailChange\Persistence\EmailChangeRequestRepositoryInterface:
         alias: Makraz\Bundle\VerifyEmailChange\Persistence\Doctrine\DoctrineEmailChangeRequestRepository
 

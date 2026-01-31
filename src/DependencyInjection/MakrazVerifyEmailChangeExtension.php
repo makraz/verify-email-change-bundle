@@ -5,6 +5,9 @@ declare(strict_types=1);
 namespace Makraz\Bundle\VerifyEmailChange\DependencyInjection;
 
 use Makraz\Bundle\VerifyEmailChange\Notifier\EmailChangeNotifier;
+use Makraz\Bundle\VerifyEmailChange\Persistence\Cache\CacheEmailChangeRequestRepository;
+use Makraz\Bundle\VerifyEmailChange\Persistence\Doctrine\DoctrineEmailChangeRequestRepository;
+use Makraz\Bundle\VerifyEmailChange\Persistence\EmailChangeRequestRepositoryInterface;
 use Symfony\Component\Config\FileLocator;
 use Symfony\Component\DependencyInjection\ContainerBuilder;
 use Symfony\Component\DependencyInjection\Definition;
@@ -29,6 +32,9 @@ class MakrazVerifyEmailChangeExtension extends Extension implements PrependExten
         $container->setParameter('verify_email_change.max_attempts', $config['max_attempts']);
         $container->setParameter('verify_email_change.require_old_email_confirmation', $config['require_old_email_confirmation']);
 
+        // Configure persistence adapter
+        $this->configurePersistence($config, $container);
+
         // Register EmailChangeNotifier if enabled
         if ($config['notifier']['enabled']) {
             $notifierDefinition = new Definition(EmailChangeNotifier::class);
@@ -41,6 +47,31 @@ class MakrazVerifyEmailChangeExtension extends Extension implements PrependExten
             $notifierDefinition->setAutowired(false);
             $notifierDefinition->setPublic(false);
             $container->setDefinition(EmailChangeNotifier::class, $notifierDefinition);
+        }
+    }
+
+    private function configurePersistence(array $config, ContainerBuilder $container): void
+    {
+        $persistence = $config['persistence'];
+        $customService = $config['persistence_service'];
+
+        if ($customService !== null) {
+            // Custom service ID provided — alias the interface to it
+            $container->setAlias(EmailChangeRequestRepositoryInterface::class, $customService);
+
+            return;
+        }
+
+        $adapterMap = [
+            'doctrine' => DoctrineEmailChangeRequestRepository::class,
+            'cache' => CacheEmailChangeRequestRepository::class,
+        ];
+
+        if (isset($adapterMap[$persistence])) {
+            $container->setAlias(
+                EmailChangeRequestRepositoryInterface::class,
+                $adapterMap[$persistence]
+            );
         }
     }
 
