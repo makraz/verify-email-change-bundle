@@ -5,6 +5,24 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.4.0] - 2026-02-10
+
+### Added
+- Pluggable persistence adapter system with configurable backends
+- `DoctrineEmailChangeRequestRepository` in `Persistence\Doctrine` namespace
+- `CacheEmailChangeRequestRepository` — PSR-6 cache-based adapter for Redis, Memcached, etc.
+- `InMemoryEmailChangeRequestRepository` — in-memory adapter for testing and stateless applications
+- `persistence` configuration option to select adapter (`doctrine` or `cache`)
+- `persistence_service` configuration option to use a custom repository service
+- Comprehensive unit tests for all persistence adapters
+- Configuration validation tests
+
+### Changed
+- Doctrine repository implementation moved from `Persistence\EmailChangeRequestRepository` to `Persistence\Doctrine\DoctrineEmailChangeRequestRepository`
+
+### Deprecated
+- `Persistence\EmailChangeRequestRepository` — use `Persistence\Doctrine\DoctrineEmailChangeRequestRepository` instead (will be removed in 2.0)
+
 ## [1.3.0] - 2026-02-10
 
 ### Added

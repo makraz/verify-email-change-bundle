@@ -16,7 +16,8 @@ A Symfony bundle that provides secure email address change functionality with ve
 - **CSRF Protection**: Built-in helper for cancel endpoint security
 - **Email Notifications**: Built-in `EmailChangeNotifier` service with Twig templates
 - **Translations**: Built-in translations for English, French, and Arabic
-- **Well Tested**: Comprehensive test suite with 300+ tests
+- **Pluggable Persistence**: Doctrine ORM, PSR-6 Cache, or in-memory adapters
+- **Well Tested**: Comprehensive test suite with 390+ tests
 - **Event-Driven**: Dispatches events for extensibility
 - **Symfony Flex**: Auto-discovery support for seamless installation
 
@@ -598,6 +599,49 @@ verify_email_change:
         verify_subject: "Custom subject"
 ```
 
+## Persistence Adapters
+
+The bundle supports multiple persistence backends. The default is Doctrine ORM.
+
+### Doctrine ORM (default)
+
+```yaml
+verify_email_change:
+    persistence: doctrine
+```
+
+Requires `doctrine/orm` and `doctrine/doctrine-bundle`.
+
+### PSR-6 Cache
+
+```yaml
+verify_email_change:
+    persistence: cache
+```
+
+Stores requests in a PSR-6 cache pool (Redis, Memcached, filesystem, etc.). Requires a `CacheItemPoolInterface` service and a user provider callback.
+
+### In-Memory
+
+The `InMemoryEmailChangeRequestRepository` is intended for testing. Register it as a service manually:
+
+```yaml
+# config/packages/test/verify_email_change.yaml
+verify_email_change:
+    persistence_service: 'app.in_memory_email_change_repository'
+```
+
+### Custom Adapter
+
+Implement `EmailChangeRequestRepositoryInterface` and point the configuration to your service:
+
+```yaml
+verify_email_change:
+    persistence_service: 'App\Repository\MyEmailChangeRequestRepository'
+```
+
+When `persistence_service` is set, it takes precedence over the `persistence` option.
+
 ## Configuration Reference
 
 ```yaml
@@ -618,6 +662,12 @@ verify_email_change:
 
     # Require confirmation from both old and new email addresses
     require_old_email_confirmation: false  # default: false
+
+    # Persistence adapter: "doctrine" or "cache"
+    persistence: doctrine  # default: doctrine
+
+    # Custom service ID for the repository (overrides persistence option)
+    persistence_service: ~  # default: null
 
     # Optional email notifier service
     notifier:
@@ -650,6 +700,16 @@ try {
 ```
 
 ## Upgrading
+
+### From v1.3 to v1.4
+
+**New features (non-breaking):**
+- Pluggable persistence adapters: Doctrine ORM, PSR-6 Cache, In-Memory
+- `DoctrineEmailChangeRequestRepository` moved to `Persistence\Doctrine` namespace
+- `persistence` and `persistence_service` configuration options
+- `EmailChangeRequestRepository` is now deprecated (use `DoctrineEmailChangeRequestRepository`)
+
+No database migration required.
 
 ### From v1.2 to v1.3
 
