@@ -18,6 +18,9 @@ services:
             version: '1.4'
             message: 'The "%alias_id%" service is deprecated. Use "Makraz\Bundle\VerifyEmailChange\Persistence\Doctrine\DoctrineEmailChangeRequestRepository" instead.'
 
+    # API Response Factory
+    Makraz\Bundle\VerifyEmailChange\Api\EmailChangeResponseFactory: ~
+
     # Token Generator
     Makraz\Bundle\VerifyEmailChange\Generator\EmailChangeTokenGenerator: ~
 
