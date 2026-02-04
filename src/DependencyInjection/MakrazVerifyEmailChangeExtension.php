@@ -5,6 +5,8 @@ declare(strict_types=1);
 namespace Makraz\Bundle\VerifyEmailChange\DependencyInjection;
 
 use Makraz\Bundle\VerifyEmailChange\Notifier\EmailChangeNotifier;
+use Makraz\Bundle\VerifyEmailChange\Otp\OtpEmailChangeHelper;
+use Makraz\Bundle\VerifyEmailChange\Otp\OtpGenerator;
 use Makraz\Bundle\VerifyEmailChange\Persistence\Cache\CacheEmailChangeRequestRepository;
 use Makraz\Bundle\VerifyEmailChange\Persistence\Doctrine\DoctrineEmailChangeRequestRepository;
 use Makraz\Bundle\VerifyEmailChange\Persistence\EmailChangeRequestRepositoryInterface;
@@ -47,6 +49,23 @@ class MakrazVerifyEmailChangeExtension extends Extension implements PrependExten
             $notifierDefinition->setAutowired(false);
             $notifierDefinition->setPublic(false);
             $container->setDefinition(EmailChangeNotifier::class, $notifierDefinition);
+        }
+
+        // Register OTP services if enabled
+        if ($config['otp']['enabled']) {
+            $otpGeneratorDefinition = new Definition(OtpGenerator::class);
+            $otpGeneratorDefinition->setArguments([$config['otp']['length']]);
+            $container->setDefinition(OtpGenerator::class, $otpGeneratorDefinition);
+
+            $otpHelperDefinition = new Definition(OtpEmailChangeHelper::class);
+            $otpHelperDefinition->setArguments([
+                new Reference(EmailChangeRequestRepositoryInterface::class),
+                new Reference(\Makraz\Bundle\VerifyEmailChange\Generator\EmailChangeTokenGenerator::class),
+                new Reference(OtpGenerator::class),
+                $config['lifetime'],
+                $config['max_attempts'],
+            ]);
+            $container->setDefinition(OtpEmailChangeHelper::class, $otpHelperDefinition);
         }
     }
 
