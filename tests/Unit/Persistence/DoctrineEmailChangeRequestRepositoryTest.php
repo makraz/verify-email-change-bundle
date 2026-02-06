@@ -165,16 +165,4 @@ class DoctrineEmailChangeRequestRepositoryTest extends TestCase
         );
     }
 
-    public function testBackwardCompatibilityClass(): void
-    {
-        $deprecatedRepository = new \Makraz\Bundle\VerifyEmailChange\Persistence\EmailChangeRequestRepository(
-            $this->entityManager
-        );
-
-        $this->assertInstanceOf(DoctrineEmailChangeRequestRepository::class, $deprecatedRepository);
-        $this->assertInstanceOf(
-            \Makraz\Bundle\VerifyEmailChange\Persistence\EmailChangeRequestRepositoryInterface::class,
-            $deprecatedRepository
-        );
-    }
 }

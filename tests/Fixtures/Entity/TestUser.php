@@ -4,14 +4,12 @@ declare(strict_types=1);
 
 namespace Makraz\Bundle\VerifyEmailChange\Tests\Fixtures\Entity;
 
-use Makraz\Bundle\VerifyEmailChange\Model\EmailChangeInterface;
+use Makraz\Bundle\VerifyEmailChange\Model\EmailChangeableInterface;
 
 /**
  * Test user entity for unit and integration tests.
- *
- * Implements the deprecated EmailChangeInterface to verify backward compatibility.
  */
-class TestUser implements EmailChangeInterface
+class TestUser implements EmailChangeableInterface
 {
     private ?int $id;
     private string $email;

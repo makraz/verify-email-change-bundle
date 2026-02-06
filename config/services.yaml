@@ -10,14 +10,6 @@ services:
     Makraz\Bundle\VerifyEmailChange\Persistence\EmailChangeRequestRepositoryInterface:
         alias: Makraz\Bundle\VerifyEmailChange\Persistence\Doctrine\DoctrineEmailChangeRequestRepository
 
-    # Backward compatibility alias (deprecated)
-    Makraz\Bundle\VerifyEmailChange\Persistence\EmailChangeRequestRepository:
-        alias: Makraz\Bundle\VerifyEmailChange\Persistence\Doctrine\DoctrineEmailChangeRequestRepository
-        deprecated:
-            package: 'makraz/verify-email-change-bundle'
-            version: '1.4'
-            message: 'The "%alias_id%" service is deprecated. Use "Makraz\Bundle\VerifyEmailChange\Persistence\Doctrine\DoctrineEmailChangeRequestRepository" instead.'
-
     # API Response Factory
     Makraz\Bundle\VerifyEmailChange\Api\EmailChangeResponseFactory: ~
 
