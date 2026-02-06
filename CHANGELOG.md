@@ -5,6 +5,21 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.0.0] - 2026-02-10
+
+### Added
+- `EmailChangeResponseFactory` for consistent JSON responses in headless/API flows
+- OTP-based email verification with `OtpEmailChangeHelper` and `OtpGenerator`
+- `OtpResult` value object returned when generating OTPs
+- Configurable OTP length (4-10 digits, default: 6)
+- `EmailChangeAuditEvent` for security-relevant audit logging
+- Audit action constants: `initiated`, `verified`, `confirmed`, `cancelled`, `failed_verification`, `max_attempts_exceeded`, `expired_access`, `old_email_confirmed`
+
+### Removed
+- **BREAKING:** `EmailChangeInterface` — use `EmailChangeableInterface` instead (deprecated since 1.1)
+- **BREAKING:** `Persistence\EmailChangeRequestRepository` — use `Persistence\Doctrine\DoctrineEmailChangeRequestRepository` instead (deprecated since 1.4)
+- Backward compatibility service alias for `EmailChangeRequestRepository`
+
 ## [1.4.0] - 2026-02-10
 
 ### Added

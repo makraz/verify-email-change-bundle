@@ -16,8 +16,11 @@ A Symfony bundle that provides secure email address change functionality with ve
 - **CSRF Protection**: Built-in helper for cancel endpoint security
 - **Email Notifications**: Built-in `EmailChangeNotifier` service with Twig templates
 - **Translations**: Built-in translations for English, French, and Arabic
+- **API/Headless Support**: JSON response factory for SPA and mobile app integration
+- **OTP Verification**: Numeric code verification alternative to signed URLs
+- **Audit Events**: Security-relevant events for logging and compliance
 - **Pluggable Persistence**: Doctrine ORM, PSR-6 Cache, or in-memory adapters
-- **Well Tested**: Comprehensive test suite with 390+ tests
+- **Well Tested**: Comprehensive test suite with 480+ tests
 - **Event-Driven**: Dispatches events for extensibility
 - **Symfony Flex**: Auto-discovery support for seamless installation
 
@@ -41,7 +44,7 @@ return [
 
 ### Step 1: Update Your User Entity
 
-Your User entity must implement `EmailChangeableInterface` (recommended) or the deprecated `EmailChangeInterface`:
+Your User entity must implement `EmailChangeableInterface`:
 
 ```php
 <?php
@@ -82,7 +85,7 @@ class User implements EmailChangeableInterface
 }
 ```
 
-> **Note:** `EmailChangeableInterface` only requires `getId()`, `getEmail()`, and `setEmail()`. The older `EmailChangeInterface` is deprecated since v1.1 and will be removed in v2.0.
+> **Note:** `EmailChangeableInterface` only requires `getId()`, `getEmail()`, and `setEmail()`.
 
 ### Step 2: Create the Database Table
 
@@ -284,8 +287,6 @@ Notification sent to OLD address
 ## API Reference
 
 ### EmailChangeHelper
-
-All methods accept `EmailChangeableInterface` (the new recommended interface). Objects implementing the deprecated `EmailChangeInterface` continue to work without changes.
 
 #### `generateSignature()`
 
@@ -599,6 +600,129 @@ verify_email_change:
         verify_subject: "Custom subject"
 ```
 
+## API / Headless Mode
+
+For SPA, mobile apps, and API-first applications, use the `EmailChangeResponseFactory` to generate consistent JSON responses:
+
+```php
+use Makraz\Bundle\VerifyEmailChange\Api\EmailChangeResponseFactory;
+use Makraz\Bundle\VerifyEmailChange\Exception\VerifyEmailChangeExceptionInterface;
+
+class ApiEmailChangeController
+{
+    public function __construct(
+        private readonly EmailChangeHelper $emailChangeHelper,
+        private readonly EmailChangeResponseFactory $responseFactory,
+    ) {}
+
+    #[Route('/api/email/change', methods: ['POST'])]
+    public function request(Request $request): JsonResponse
+    {
+        try {
+            $user = $this->getUser();
+            $newEmail = $request->toArray()['new_email'];
+
+            $signature = $this->emailChangeHelper->generateSignature(
+                'api_email_change_verify', $user, $newEmail
+            );
+
+            return $this->responseFactory->initiated($newEmail, $signature->getExpiresAt());
+        } catch (VerifyEmailChangeExceptionInterface $e) {
+            return $this->responseFactory->error($e);
+        }
+    }
+
+    #[Route('/api/email/status', methods: ['GET'])]
+    public function status(): JsonResponse
+    {
+        $user = $this->getUser();
+        return $this->responseFactory->pendingStatus(
+            $this->emailChangeHelper->getPendingEmail($user)
+        );
+    }
+}
+```
+
+## OTP Verification
+
+For mobile apps and API flows, use numeric OTP codes instead of signed URL links:
+
+```yaml
+# config/packages/verify_email_change.yaml
+verify_email_change:
+    otp:
+        enabled: true
+        length: 6  # 4-10 digits
+```
+
+```php
+use Makraz\Bundle\VerifyEmailChange\Otp\OtpEmailChangeHelper;
+
+class OtpEmailChangeController
+{
+    public function __construct(
+        private readonly OtpEmailChangeHelper $otpHelper,
+    ) {}
+
+    #[Route('/api/email/otp/request', methods: ['POST'])]
+    public function request(Request $request): JsonResponse
+    {
+        $user = $this->getUser();
+        $newEmail = $request->toArray()['new_email'];
+
+        $result = $this->otpHelper->generateOtp($user, $newEmail);
+
+        // Send the OTP to the new email address
+        // $this->mailer->send(...$result->getOtp()...)
+
+        return new JsonResponse([
+            'message' => 'OTP sent to new email address.',
+            'expires_at' => $result->getExpiresAt()->format(\DateTimeInterface::ATOM),
+        ]);
+    }
+
+    #[Route('/api/email/otp/verify', methods: ['POST'])]
+    public function verify(Request $request): JsonResponse
+    {
+        $user = $this->getUser();
+        $otp = $request->toArray()['otp'];
+
+        $oldEmail = $this->otpHelper->verifyOtp($user, $otp);
+
+        return new JsonResponse([
+            'message' => 'Email changed successfully.',
+            'old_email' => $oldEmail,
+            'new_email' => $user->getEmail(),
+        ]);
+    }
+}
+```
+
+## Audit Events
+
+The `EmailChangeAuditEvent` provides security-relevant information for logging:
+
+```php
+use Makraz\Bundle\VerifyEmailChange\Event\EmailChangeAuditEvent;
+use Symfony\Component\EventDispatcher\Attribute\AsEventListener;
+
+#[AsEventListener]
+class EmailChangeAuditListener
+{
+    public function __invoke(EmailChangeAuditEvent $event): void
+    {
+        $action = $event->getAction(); // 'initiated', 'confirmed', 'failed_verification', etc.
+        $user = $event->getUser();
+        $ip = $event->getIpAddress();
+        $metadata = $event->getMetadata();
+
+        // Log to your audit system
+    }
+}
+```
+
+Available actions: `initiated`, `verified`, `confirmed`, `cancelled`, `failed_verification`, `max_attempts_exceeded`, `expired_access`, `old_email_confirmed`.
+
 ## Persistence Adapters
 
 The bundle supports multiple persistence backends. The default is Doctrine ORM.
@@ -669,6 +793,11 @@ verify_email_change:
     # Custom service ID for the repository (overrides persistence option)
     persistence_service: ~  # default: null
 
+    # OTP verification mode (alternative to signed URLs)
+    otp:
+        enabled: false  # default: false
+        length: 6       # default: 6 (4-10 digits)
+
     # Optional email notifier service
     notifier:
         enabled: false  # default: false
@@ -700,6 +829,27 @@ try {
 ```
 
 ## Upgrading
+
+### From v1.4 to v2.0
+
+**Breaking changes:**
+- `EmailChangeInterface` has been **removed**. Use `EmailChangeableInterface` instead.
+- `Persistence\EmailChangeRequestRepository` has been **removed**. Use `Persistence\Doctrine\DoctrineEmailChangeRequestRepository` instead.
+
+**New features:**
+- `EmailChangeResponseFactory` for JSON/API responses
+- OTP-based email verification (`OtpEmailChangeHelper`)
+- `EmailChangeAuditEvent` for security logging
+
+**Migration:**
+
+```diff
+-use Makraz\Bundle\VerifyEmailChange\Model\EmailChangeInterface;
++use Makraz\Bundle\VerifyEmailChange\Model\EmailChangeableInterface;
+
+-class User implements EmailChangeInterface
++class User implements EmailChangeableInterface
+```
 
 ### From v1.3 to v1.4
 
