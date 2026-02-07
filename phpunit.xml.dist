@@ -36,18 +36,14 @@
         </testsuite>
     </testsuites>
 
-    <coverage>
+    <source>
         <include>
             <directory>src</directory>
         </include>
         <exclude>
             <directory>src/DependencyInjection</directory>
-            <file>src/SymfonyCastsVerifyEmailChangeBundle.php</file>
+            <directory>src/Command</directory>
+            <file>src/MakrazVerifyEmailChangeBundle.php</file>
         </exclude>
-        <report>
-            <html outputDirectory="coverage/html"/>
-            <clover outputFile="coverage/clover.xml"/>
-            <text outputFile="php://stdout" showUncoveredFiles="false"/>
-        </report>
-    </coverage>
+    </source>
 </phpunit>
