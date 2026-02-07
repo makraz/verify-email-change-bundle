@@ -23,11 +23,13 @@
     "require-dev": {
         "doctrine/orm": "^2.14|^3.0",
         "doctrine/doctrine-bundle": "^2.10",
+        "phpstan/phpstan": "^1.10|^2.0",
         "phpunit/phpunit": "^10.0",
         "symfony/mailer": "^6.4|^7.0",
         "symfony/phpunit-bridge": "^6.4|^7.0",
         "symfony/validator": "^6.4|^7.0",
-        "symfony/yaml": "^6.4|^7.0|^8.0"
+        "symfony/yaml": "^6.4|^7.0|^8.0",
+        "symfony/security-csrf": "^6.4|^7.0|^8.0"
     },
     "suggest": {
         "doctrine/orm": "Required for the Doctrine persistence adapter (default)",

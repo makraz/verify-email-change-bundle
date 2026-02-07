@@ -1,0 +1,11 @@
+parameters:
+    level: 5
+    paths:
+        - src/
+    excludePaths:
+        - src/Command/MakeChangeEmailFormCommand.php
+    treatPhpDocTypesAsCertain: false
+    reportUnmatchedIgnoredErrors: false
+    ignoreErrors:
+        - '#Call to an undefined method Symfony\\Component\\Config\\Definition\\Builder\\NodeDefinition::#'
+        - '#Property .+EmailChangeRequest::\$id .+ is never assigned int so it can be removed#'
