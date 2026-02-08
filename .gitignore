@@ -3,3 +3,6 @@
 /.idea/
 /.phpunit.cache/
 composer.lock
+/infection.log
+/infection-summary.log
+/coverage/
