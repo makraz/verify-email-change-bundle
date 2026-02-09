@@ -723,36 +723,36 @@ class EmailChangeAuditListener
 
 Available actions: `initiated`, `verified`, `confirmed`, `cancelled`, `failed_verification`, `max_attempts_exceeded`, `expired_access`, `old_email_confirmed`.
 
-## Persistence Adapters
+## Storage Backends
 
-The bundle supports multiple persistence backends. The default is Doctrine ORM.
+The bundle supports multiple storage backends. The default is `database` (Doctrine ORM).
 
-### Doctrine ORM (default)
-
-```yaml
-verify_email_change:
-    persistence: doctrine
-```
-
-Requires `doctrine/orm` and `doctrine/doctrine-bundle`.
-
-### PSR-6 Cache
+### Database (default)
 
 ```yaml
 verify_email_change:
-    persistence: cache
+    storage: database
 ```
 
-Stores requests in a PSR-6 cache pool (Redis, Memcached, filesystem, etc.). Requires a `CacheItemPoolInterface` service and a user provider callback.
+Uses Doctrine ORM to persist email change requests. Requires `doctrine/orm` and `doctrine/doctrine-bundle`.
 
-### In-Memory
+### Stateless
+
+```yaml
+verify_email_change:
+    storage: stateless
+```
+
+Uses a PSR-6 cache pool (Redis, Memcached, filesystem, etc.) instead of a database. Ideal for applications that don't use Doctrine ORM or want faster lookups. Requires a `CacheItemPoolInterface` service and a user provider callback.
+
+### In-Memory (Testing)
 
 The `InMemoryEmailChangeRequestRepository` is intended for testing. Register it as a service manually:
 
 ```yaml
 # config/packages/test/verify_email_change.yaml
 verify_email_change:
-    persistence_service: 'app.in_memory_email_change_repository'
+    storage_service: 'app.in_memory_email_change_repository'
 ```
 
 ### Custom Adapter
@@ -761,10 +761,10 @@ Implement `EmailChangeRequestRepositoryInterface` and point the configuration to
 
 ```yaml
 verify_email_change:
-    persistence_service: 'App\Repository\MyEmailChangeRequestRepository'
+    storage_service: 'App\Repository\MyEmailChangeRequestRepository'
 ```
 
-When `persistence_service` is set, it takes precedence over the `persistence` option.
+When `storage_service` is set, it takes precedence over the `storage` option.
 
 ## Configuration Reference
 
@@ -787,11 +787,11 @@ verify_email_change:
     # Require confirmation from both old and new email addresses
     require_old_email_confirmation: false  # default: false
 
-    # Persistence adapter: "doctrine" or "cache"
-    persistence: doctrine  # default: doctrine
+    # Storage backend: "database" (Doctrine ORM) or "stateless" (PSR-6 cache)
+    storage: database  # default: database
 
-    # Custom service ID for the repository (overrides persistence option)
-    persistence_service: ~  # default: null
+    # Custom service ID for the repository (overrides storage option)
+    storage_service: ~  # default: null
 
     # OTP verification mode (alternative to signed URLs)
     otp:
@@ -835,6 +835,8 @@ try {
 **Breaking changes:**
 - `EmailChangeInterface` has been **removed**. Use `EmailChangeableInterface` instead.
 - `Persistence\EmailChangeRequestRepository` has been **removed**. Use `Persistence\Doctrine\DoctrineEmailChangeRequestRepository` instead.
+- `persistence` config option renamed to `storage` (values: `database`, `stateless`).
+- `persistence_service` config option renamed to `storage_service`.
 
 **New features:**
 - `EmailChangeResponseFactory` for JSON/API responses
@@ -851,12 +853,22 @@ try {
 +class User implements EmailChangeableInterface
 ```
 
+```diff
+ # config/packages/verify_email_change.yaml
+ verify_email_change:
+-    persistence: doctrine
++    storage: database
+
+-    persistence_service: 'App\Repository\MyRepo'
++    storage_service: 'App\Repository\MyRepo'
+```
+
 ### From v1.3 to v1.4
 
 **New features (non-breaking):**
 - Pluggable persistence adapters: Doctrine ORM, PSR-6 Cache, In-Memory
 - `DoctrineEmailChangeRequestRepository` moved to `Persistence\Doctrine` namespace
-- `persistence` and `persistence_service` configuration options
+- `storage` and `storage_service` configuration options
 - `EmailChangeRequestRepository` is now deprecated (use `DoctrineEmailChangeRequestRepository`)
 
 No database migration required.

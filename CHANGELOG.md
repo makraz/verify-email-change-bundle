@@ -5,7 +5,7 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [2.0.0] - 2026-02-10
+## [2.0.0] - 2026-02-09
 
 ### Added
 - `EmailChangeResponseFactory` for consistent JSON responses in headless/API flows
@@ -15,12 +15,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `EmailChangeAuditEvent` for security-relevant audit logging
 - Audit action constants: `initiated`, `verified`, `confirmed`, `cancelled`, `failed_verification`, `max_attempts_exceeded`, `expired_access`, `old_email_confirmed`
 
+### Changed
+- **BREAKING:** `persistence` config option renamed to `storage` with values `database` (default) and `stateless`
+- **BREAKING:** `persistence_service` config option renamed to `storage_service`
+
 ### Removed
 - **BREAKING:** `EmailChangeInterface` — use `EmailChangeableInterface` instead (deprecated since 1.1)
 - **BREAKING:** `Persistence\EmailChangeRequestRepository` — use `Persistence\Doctrine\DoctrineEmailChangeRequestRepository` instead (deprecated since 1.4)
 - Backward compatibility service alias for `EmailChangeRequestRepository`
 
-## [1.4.0] - 2026-02-10
+## [1.4.0] - 2026-02-02
 
 ### Added
 - Pluggable persistence adapter system with configurable backends
@@ -38,7 +42,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Deprecated
 - `Persistence\EmailChangeRequestRepository` — use `Persistence\Doctrine\DoctrineEmailChangeRequestRepository` instead (will be removed in 2.0)
 
-## [1.3.0] - 2026-02-10
+## [1.3.0] - 2026-01-26
 
 ### Added
 - Translation support with built-in translations for English, French, and Arabic
@@ -54,7 +58,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Uses built-in Twig templates (customizable via Symfony template overriding)
 - `notifier` configuration section to enable and configure the notifier service
 
-## [1.2.0] - 2026-02-10
+## [1.2.0] - 2026-01-12
 
 ### Added
 - Max verification attempts with auto-invalidation (default: 5 attempts)
@@ -74,7 +78,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Dual verification mode prevents account takeover by requiring old email confirmation
 - CSRF token helper prevents cross-site request forgery on cancel endpoint
 
-## [1.1.0] - 2026-02-10
+## [1.1.0] - 2025-12-22
 
 ### Added
 - `EmailChangeableInterface` — a simplified interface requiring only `getId()`, `getEmail()`, and `setEmail()`

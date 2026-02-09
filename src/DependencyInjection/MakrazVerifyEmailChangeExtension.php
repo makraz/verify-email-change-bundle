@@ -71,8 +71,8 @@ class MakrazVerifyEmailChangeExtension extends Extension implements PrependExten
 
     private function configurePersistence(array $config, ContainerBuilder $container): void
     {
-        $persistence = $config['persistence'];
-        $customService = $config['persistence_service'];
+        $storage = $config['storage'];
+        $customService = $config['storage_service'];
 
         if ($customService !== null) {
             // Custom service ID provided — alias the interface to it
@@ -82,14 +82,14 @@ class MakrazVerifyEmailChangeExtension extends Extension implements PrependExten
         }
 
         $adapterMap = [
-            'doctrine' => DoctrineEmailChangeRequestRepository::class,
-            'cache' => CacheEmailChangeRequestRepository::class,
+            'database' => DoctrineEmailChangeRequestRepository::class,
+            'stateless' => CacheEmailChangeRequestRepository::class,
         ];
 
-        if (isset($adapterMap[$persistence])) {
+        if (isset($adapterMap[$storage])) {
             $container->setAlias(
                 EmailChangeRequestRepositoryInterface::class,
-                $adapterMap[$persistence]
+                $adapterMap[$storage]
             );
         }
     }

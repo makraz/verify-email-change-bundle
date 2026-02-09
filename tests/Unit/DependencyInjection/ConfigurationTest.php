@@ -36,8 +36,8 @@ class ConfigurationTest extends TestCase
         $this->assertSame(3600, $config['throttle_limit']);
         $this->assertSame(5, $config['max_attempts']);
         $this->assertFalse($config['require_old_email_confirmation']);
-        $this->assertSame('doctrine', $config['persistence']);
-        $this->assertNull($config['persistence_service']);
+        $this->assertSame('database', $config['storage']);
+        $this->assertNull($config['storage_service']);
         $this->assertFalse($config['notifier']['enabled']);
     }
 
@@ -80,31 +80,31 @@ class ConfigurationTest extends TestCase
         $this->assertTrue($config['require_old_email_confirmation']);
     }
 
-    public function testPersistenceDoctrine(): void
+    public function testStorageDatabase(): void
     {
-        $config = $this->processConfig(['persistence' => 'doctrine']);
+        $config = $this->processConfig(['storage' => 'database']);
 
-        $this->assertSame('doctrine', $config['persistence']);
+        $this->assertSame('database', $config['storage']);
     }
 
-    public function testPersistenceCache(): void
+    public function testStorageStateless(): void
     {
-        $config = $this->processConfig(['persistence' => 'cache']);
+        $config = $this->processConfig(['storage' => 'stateless']);
 
-        $this->assertSame('cache', $config['persistence']);
+        $this->assertSame('stateless', $config['storage']);
     }
 
-    public function testPersistenceInvalid(): void
+    public function testStorageInvalid(): void
     {
         $this->expectException(\Symfony\Component\Config\Definition\Exception\InvalidConfigurationException::class);
-        $this->processConfig(['persistence' => 'invalid']);
+        $this->processConfig(['storage' => 'invalid']);
     }
 
-    public function testPersistenceService(): void
+    public function testStorageService(): void
     {
-        $config = $this->processConfig(['persistence_service' => 'app.custom_repository']);
+        $config = $this->processConfig(['storage_service' => 'app.custom_repository']);
 
-        $this->assertSame('app.custom_repository', $config['persistence_service']);
+        $this->assertSame('app.custom_repository', $config['storage_service']);
     }
 
     public function testNotifierEnabled(): void
