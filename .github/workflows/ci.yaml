@@ -26,6 +26,13 @@ jobs:
             symfony: '7.1.*'
           - php: '8.4'
             symfony: '7.2.*'
+          # Symfony 8.x requires PHP >= 8.4
+          - php: '8.4'
+            symfony: '8.0.*'
+          - php: '8.5'
+            symfony: '7.2.*'
+          - php: '8.5'
+            symfony: '8.0.*'
 
     steps:
       - uses: actions/checkout@v4
@@ -60,7 +67,7 @@ jobs:
       - name: Setup PHP
         uses: shivammathur/setup-php@v2
         with:
-          php-version: '8.3'
+          php-version: '8.4'
           coverage: none
 
       - name: Install dependencies
@@ -78,7 +85,7 @@ jobs:
       - name: Setup PHP
         uses: shivammathur/setup-php@v2
         with:
-          php-version: '8.3'
+          php-version: '8.4'
           coverage: none
 
       - name: Install dependencies
@@ -96,7 +103,7 @@ jobs:
       - name: Setup PHP
         uses: shivammathur/setup-php@v2
         with:
-          php-version: '8.3'
+          php-version: '8.4'
           coverage: xdebug
 
       - name: Install dependencies

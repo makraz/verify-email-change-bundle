@@ -12,22 +12,22 @@
     ],
     "require": {
         "php": ">=8.1",
-        "symfony/framework-bundle": "^6.4|^7.0",
-        "symfony/security-core": "^6.4|^7.0",
-        "symfony/http-foundation": "^6.4|^7.0",
-        "symfony/routing": "^6.4|^7.0",
-        "symfony/event-dispatcher": "^6.4|^7.0",
-        "symfony/translation": "^6.4|^7.0",
+        "symfony/framework-bundle": "^6.4|^7.0|^8.0",
+        "symfony/security-core": "^6.4|^7.0|^8.0",
+        "symfony/http-foundation": "^6.4|^7.0|^8.0",
+        "symfony/routing": "^6.4|^7.0|^8.0",
+        "symfony/event-dispatcher": "^6.4|^7.0|^8.0",
+        "symfony/translation": "^6.4|^7.0|^8.0",
         "twig/twig": "^3.0"
     },
     "require-dev": {
         "doctrine/orm": "^2.14|^3.0",
-        "doctrine/doctrine-bundle": "^2.10",
+        "doctrine/doctrine-bundle": "^2.10|^3.0",
         "phpstan/phpstan": "^1.10|^2.0",
         "phpunit/phpunit": "^10.0",
-        "symfony/mailer": "^6.4|^7.0",
-        "symfony/phpunit-bridge": "^6.4|^7.0",
-        "symfony/validator": "^6.4|^7.0",
+        "symfony/mailer": "^6.4|^7.0|^8.0",
+        "symfony/phpunit-bridge": "^6.4|^7.0|^8.0",
+        "symfony/validator": "^6.4|^7.0|^8.0",
         "symfony/yaml": "^6.4|^7.0|^8.0",
         "symfony/security-csrf": "^6.4|^7.0|^8.0"
     },
@@ -49,7 +49,7 @@
     "extra": {
         "symfony": {
             "allow-contrib": false,
-            "require": "^6.4|^7.0"
+            "require": "^6.4|^7.0|^8.0"
         }
     },
     "minimum-stability": "dev",

@@ -23,7 +23,7 @@ class PurgeExpiredEmailChangeRequestsCommandTest extends TestCase
 
         $command = new PurgeExpiredEmailChangeRequestsCommand($this->repository);
         $application = new Application();
-        $application->add($command);
+        $application->addCommands([$command]);
 
         $this->commandTester = new CommandTester($application->find('verify:email-change:purge-expired'));
     }

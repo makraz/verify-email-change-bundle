@@ -6,7 +6,6 @@ namespace Makraz\Bundle\VerifyEmailChange\Tests\Command;
 
 use Makraz\Bundle\VerifyEmailChange\Command\MakeChangeEmailFormCommand;
 use PHPUnit\Framework\TestCase;
-use Symfony\Component\Console\Application;
 use Symfony\Component\Console\Tester\CommandTester;
 use Symfony\Component\Filesystem\Filesystem;
 
@@ -23,8 +22,6 @@ class MakeChangeEmailFormCommandTest extends TestCase
         $this->filesystem->mkdir($this->testDir);
 
         $command = new MakeChangeEmailFormCommand($this->testDir);
-        $application = new Application();
-        $application->add($command);
 
         $this->commandTester = new CommandTester($command);
     }
