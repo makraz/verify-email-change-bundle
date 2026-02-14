@@ -5,6 +5,17 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Added
+- Symfony 8.0 support across all runtime and dev dependencies
+- PHP 8.4–8.5 and Symfony 7.2/8.0 to the CI test matrix
+- `SECURITY.md` with vulnerability reporting policy and security measures documentation
+
+### Fixed
+- Aligned `require-dev` Symfony version constraints with `require` (removed premature `^8.0` that was untested)
+- Added missing CI/infrastructure entries to the v2.0.0 changelog
+
 ## [2.0.0] - 2026-02-09
 
 ### Added
@@ -23,6 +34,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **BREAKING:** `EmailChangeInterface` — use `EmailChangeableInterface` instead (deprecated since 1.1)
 - **BREAKING:** `Persistence\EmailChangeRequestRepository` — use `Persistence\Doctrine\DoctrineEmailChangeRequestRepository` instead (deprecated since 1.4)
 - Backward compatibility service alias for `EmailChangeRequestRepository`
+
+### Infrastructure
+- GitHub Actions CI matrix for PHP 8.1–8.4 and Symfony 6.4–7.2
+- PHPStan static analysis at level 5
+- PHPUnit source coverage configuration
+- Infection mutation testing configuration
 
 ## [1.4.0] - 2026-02-02
 
